@@ -7,7 +7,7 @@
 #' cell types. If a non-specific model is used for prediction, the predicted values should be the same in two cell types.
 #' @export
 #'
-MiXcan_prediction <- function(weight, new_x){
+MiXcan2_prediction <- function(weight, new_x){
   yhat_MiXcan_cell_1 <- new_x %*% as.matrix(weight[,"weight_cell_1"])
   yhat_MiXcan_cell_2 <- new_x %*% as.matrix(weight[,"weight_cell_2"])
   yhat_MiXcan_prediction <- cbind(yhat_MiXcan_cell_1, yhat_MiXcan_cell_1)

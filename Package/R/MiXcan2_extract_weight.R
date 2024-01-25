@@ -10,7 +10,7 @@
 #' @return A data frame with weight for cell 1 and 2, including the potential meta data for the SNP/gene.
 #' @export
 #'
-MiXcan_extract_weight <- function(model, keepZeroWeight=F) {
+MiXcan2_extract_weight <- function(model, keepZeroWeight=F) {
   result_weight_gene_once <-
     model$beta.SNP.cell1 %>%
     dplyr::rename(weight_cell_1 = weight) %>%

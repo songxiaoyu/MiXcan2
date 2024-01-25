@@ -1,10 +1,10 @@
-Package: MiXcan
+Package: MiXcan2
 Type: Package
 Title: Cell-type-Aware Transcriptome-Wide Association Studies with Bulk Tissue Data
 Version: 0.1.0
 Author: Xiaoyu Song
 Maintainer: The package maintainer <xiaoyu.song@mountsinai.org>
-Description: The goal of MiXcan is to construct cell-type-level gene expression prediction models (cell-type-specific or nonspecific), apply these models to predict cell-type-level genetically regulated expression in new data, and perform cell-type-aware transcriptome-wide association studies.
+Description: The goal of MiXcan2 is to construct cell-type-level gene expression prediction models (cell-type-specific or nonspecific), apply these models to predict cell-type-level genetically regulated expression in new data, and perform cell-type-aware transcriptome-wide association studies. The major difference with original MiXcan is that it allows ensemble method.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -15,6 +15,7 @@ Imports:
     Matrix,
     glmnet,
     broom,
+    rlist,
     dplyr,
 Remotes: 
     github::yaowuliu/ACAT
