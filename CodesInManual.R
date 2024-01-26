@@ -9,7 +9,7 @@ set.seed(123)
 n=200
 pi=rbeta(n, 2, 3)
 x=matrix(rbinom(n*10, 2, 0.3), ncol=10)
-y=2*x[,1]*pi+rnorm(n, sd=0.5)
+y=x[,1]*pi+rnorm(n, sd=0.2)
 cov=NULL
 
 var(2*x[,1]*pi)/var(y) # real 2

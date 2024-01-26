@@ -59,7 +59,7 @@ A full description of the method can be found in our
 
 ``` r
 knitr::opts_chunk$set(echo = TRUE)
-library(MiXcan) 
+library(MiXcan2) 
 ```
 
 ## Installation
@@ -89,7 +89,7 @@ With R, users can install the MiXcan package directly from GitHub with
 
 ``` r
 install.packages("devtools")
-devtools::install_github("songxiaoyu/MiXcan/Package")
+devtools::install_github("songxiaoyu/MiXcan2/Package")
 ```
 
 The typical install time of the package is less than 5 minutes.
@@ -102,11 +102,15 @@ be pre-excluded to allow model training on the remaining samples.
 
 ### Data
 
-The peusdo data are included in the Github page. We can load the data:
+Create peusdo data for demonstration:
 
 ``` r
-library(MiXcan)
-data(example_data)
+set.seed(123)
+n=200
+pi=rbeta(n, 2, 3)
+x=matrix(rbinom(n*10, 2, 0.3), ncol=10)
+y=x[,1]*pi+rnorm(n, sd=0.2)
+cov=NULL
 ```
 
 ### MiXcan analysis pipeline
@@ -126,40 +130,22 @@ library(tidyverse)
 ```
 
     ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-    ## ✔ dplyr     1.1.0     ✔ readr     2.1.4
-    ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-    ## ✔ ggplot2   3.4.1     ✔ tibble    3.2.1
-    ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-    ## ✔ purrr     1.0.1
+    ## ✔ dplyr     1.1.4     ✔ readr     2.1.4
+    ## ✔ forcats   1.0.0     ✔ stringr   1.5.1
+    ## ✔ ggplot2   3.4.4     ✔ tibble    3.2.1
+    ## ✔ lubridate 1.9.3     ✔ tidyr     1.3.0
+    ## ✔ purrr     1.0.2
 
     ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ purrr::accumulate() masks foreach::accumulate()
     ## ✖ dplyr::filter()     masks stats::filter()
     ## ✖ dplyr::lag()        masks stats::lag()
     ## ✖ purrr::when()       masks foreach::when()
-    ## ℹ Use the ]8;;http://conflicted.r-lib.org/conflicted package]8;; to force all conflicts to become errors
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
 ``` r
+library(rlist)
 nCores=detectCores()-1; registerDoParallel(nCores) # use parallel computing for speed, but leave 1 core out for other activities. 
-```
-
-Step 1: Improving the estimation of the cell-type composition from
-prior. This step is optional, and can be ignored if input cell-type
-composition estimates is preferred.
-
-``` r
-set.seed(123)
-pi_estimation_result <- pi_estimation(expression_matrix = GTEx_epithelial_genes,
-              prior = GTEx_prior, 
-              n_iteration = 5) 
-pi_example=pi_estimation_result$mean_trim_0.05
-pi_example[1:3]
-```
-
-    ## [1] 0.2394073 0.2258077 0.1000000
-
-``` r
-# Note: 0<prior<1 that prior should not hit the boundaries. If xCell score is used, add a small perturbation for zero.
 ```
 
 Step 2: Estimating cell-type-specific (and nonspecific) GReX prediction
@@ -167,62 +153,48 @@ weights of a gene using the MiXcan function
 
 ``` r
 set.seed(111)
-foldid_example <- sample(1:10, length(y_example), replace=T)
-MiXcan_result <- MiXcan(y=y_example, x=x_example, cov = cov_example, pi= pi_example, foldid = foldid_example)
-MiXcan_result$beta.SNP.cell1
+foldid <- sample(1:10, length(y), replace=T)
+
+model <- MiXcan2_model(y=y, x=x, cov = cov,
+                        pi= pi,
+                        foldid = foldid, yName="Gene1",
+                       xNameMatrix = paste0("X", 1:10))
+model$beta.SNP.cell1
 ```
 
-    ##    xNameMatrix      weight
-    ## 1         SNP1  0.00000000
-    ## 2         SNP2  0.00000000
-    ## 3         SNP3  0.00614620
-    ## 4         SNP4  0.04108504
-    ## 5         SNP5  0.00000000
-    ## 6         SNP6  0.00000000
-    ## 7         SNP7  0.00000000
-    ## 8         SNP8  0.00000000
-    ## 9         SNP9  0.00000000
-    ## 10       SNP10 -0.03021309
-    ## 11       SNP11  0.00000000
-    ## 12       SNP12  0.00000000
-    ## 13       SNP13  0.00000000
-    ## 14       SNP14  0.00000000
-    ## 15       SNP15  0.00000000
-    ## 16       SNP16  0.00000000
-    ## 17       SNP17  0.00000000
-    ## 18       SNP18  0.00000000
-    ## 19       SNP19 -0.06553891
+    ##    xNameMatrix    weight
+    ## 1           X1 0.4985004
+    ## 2           X2 0.0000000
+    ## 3           X3 0.0000000
+    ## 4           X4 0.0000000
+    ## 5           X5 0.0000000
+    ## 6           X6 0.0000000
+    ## 7           X7 0.0000000
+    ## 8           X8 0.0000000
+    ## 9           X9 0.0000000
+    ## 10         X10 0.0000000
 
 ``` r
-MiXcan_result$beta.SNP.cell2
+model$beta.SNP.cell2
 ```
 
-    ##    xNameMatrix      weight
-    ## 1         SNP1  0.00000000
-    ## 2         SNP2  0.00000000
-    ## 3         SNP3  0.00614620
-    ## 4         SNP4  0.04108504
-    ## 5         SNP5  0.00000000
-    ## 6         SNP6  0.00000000
-    ## 7         SNP7  0.00000000
-    ## 8         SNP8  0.00000000
-    ## 9         SNP9  0.00000000
-    ## 10       SNP10 -0.03021309
-    ## 11       SNP11  0.00000000
-    ## 12       SNP12  0.00000000
-    ## 13       SNP13  0.00000000
-    ## 14       SNP14  0.00000000
-    ## 15       SNP15  0.00000000
-    ## 16       SNP16  0.00000000
-    ## 17       SNP17  0.00000000
-    ## 18       SNP18  0.00000000
-    ## 19       SNP19 -0.06553891
+    ##    xNameMatrix   weight
+    ## 1           X1 0.181293
+    ## 2           X2 0.000000
+    ## 3           X3 0.000000
+    ## 4           X4 0.000000
+    ## 5           X5 0.000000
+    ## 6           X6 0.000000
+    ## 7           X7 0.000000
+    ## 8           X8 0.000000
+    ## 9           X9 0.000000
+    ## 10         X10 0.000000
 
 Step 3: Extracting the weights and model summaries from the MiXcan
 output.
 
 ``` r
-MiXcan_weight_result <- MiXcan_extract_weight(model = MiXcan_result)
+MiXcan_weight_result <- MiXcan2_extract_weight(model = model)
 ```
 
     ## Joining with `by = join_by(xNameMatrix)`
@@ -231,114 +203,184 @@ MiXcan_weight_result <- MiXcan_extract_weight(model = MiXcan_result)
 MiXcan_weight_result
 ```
 
-    ##   xNameMatrix weight_cell_1 weight_cell_2        type
-    ## 1        SNP3    0.00614620    0.00614620 NonSpecific
-    ## 2        SNP4    0.04108504    0.04108504 NonSpecific
-    ## 3       SNP10   -0.03021309   -0.03021309 NonSpecific
-    ## 4       SNP19   -0.06553891   -0.06553891 NonSpecific
+    ##   yName xNameMatrix weight_cell_1 weight_cell_2             type
+    ## 1 Gene1          X1     0.4985004      0.181293 CellTypeSpecific
 
 ``` r
-MiXcan_summary_result <- MiXcan_extract_summary(x=x_example, y=y_example, pi=pi_example, model=MiXcan_result)
+MiXcan_summary_result <- MiXcan2_extract_summary(x=x, y=y, cov=cov,
+                                                pi=pi, model=model)
 ```
 
-    ## Joining with `by = join_by(xNameMatrix)`
     ## Joining with `by = join_by(xNameMatrix)`
 
 ``` r
 MiXcan_summary_result
 ```
 
-    ##     n_snp_input n_snp_model model_type    in_sample_r2        
-    ## cor "19"        "4"         "NonSpecific" "0.0935647635902331"
-    ##     in_sample_cor_pvalue  
-    ## cor "0.000522283468456319"
+    ##   yName n_snp_input n_snp_model       model_type     cv_r2 in_sample_r2
+    ## 1 Gene1          10           1 CellTypeSpecific 0.5500884    0.5734584
 
-Note, the MiXcan estimated weights are from penalized regression
+Note, the MiXcan estimated models are from penalized regression
 (elastic-net), which shrinks the effect size towards zero. If users are
-interested to use un-penalized weights for the MiXcan selected SNPs,
+interested to use less penalized weights for the MiXcan selected SNPs,
 they can employ the following function:
 
 ``` r
-MiXcan_weight_refit <- MiXcan_refit_weight(model = MiXcan_result, y=y_example, 
-                                           x=x_example, cov = cov_example, 
-                                           pi= pi_example)
+MiXcan_refit <- MiXcan2_refit(model = model,
+                                           y=y,
+                                           x=x, cov = cov,
+                                           pi= pi)
 ```
 
-    ## Joining with `by = join_by(xNameMatrix)`
-    ## Joining with `by = join_by(xNameMatrix)`
-
-``` r
-MiXcan_weight_refit
-```
-
-    ##   xNameMatrix weight_cell_1 weight_cell_2        type
-    ## 1        SNP3    0.07927261    0.07927261 NonSpecific
-    ## 2        SNP4    0.06740230    0.06740230 NonSpecific
-    ## 3       SNP10   -0.02813351   -0.02813351 NonSpecific
-    ## 4       SNP19   -0.12835906   -0.12835906 NonSpecific
-
-Similarly, one can get the refitted model summary.
-
-``` r
-MiXcan_summary_refit <- MiXcan_refit_summary(model = MiXcan_result, y=y_example, 
-                                           x=x_example, cov = cov_example, 
-                                           pi= pi_example)
-```
-
-    ## Joining with `by = join_by(xNameMatrix)`
-    ## Joining with `by = join_by(xNameMatrix)`
     ## Joining with `by = join_by(xNameMatrix)`
     ## Joining with `by = join_by(xNameMatrix)`
     ## Joining with `by = join_by(xNameMatrix)`
 
 ``` r
-MiXcan_summary_refit 
+MiXcan_refit$weight
 ```
 
-    ##     n_snp_input n_snp_model  model_type       in_sample_r2 in_sample_cor_pvalue
-    ## cor          19           4 NonSpecific 0.0935647635902331 0.000522283468456319
-    ##     in_sample_r2_refit in_sample_cor_pvalue_refit
-    ## cor          0.0886509               0.0007455809
-
-Step 4: Predicting the cell-type-specific or nonspecific expression
-levels of the gene in a new genetic data.
+    ##   yName xNameMatrix weight_cell_1 weight_cell_2             type
+    ## 1 Gene1          X1     0.9149063    0.03824874 CellTypeSpecific
 
 ``` r
-MiXcan_prediction_result <- MiXcan_prediction(weight = MiXcan_weight_result, new_x = new_X_example)
-MiXcan_prediction_result[1:3,]
+MiXcan_refit$summary
 ```
 
-    ##           cell_1      cell_2
-    ## [1,]  0.00000000  0.00000000
-    ## [2,] -0.01319494 -0.01319494
-    ## [3,]  0.01701815  0.01701815
+    ##   yName n_snp_input n_snp_model       model_type     cv_r2 in_sample_r2
+    ## 1 Gene1          10           1 CellTypeSpecific 0.5500884    0.5734584
+    ##   cv_r2_refit in_sample_r2_refit
+    ## 1   0.6145838           0.636116
 
-Step 5: Association analysis with MiXcan predicted GReX levels
+One can run MiXcan for multiple times to ensemble models for downstream
+anlaysis. Here are the codes:
 
 ``` r
-MiXcan_association_result <- MiXcan_association(new_y = MiXcan_prediction_result,
-                                                new_cov = new_cov_example, 
-                                                new_outcome = new_outcome_example, family  = "binomial")
-MiXcan_association_result
+ensemble=MiXcan2_ensemble(y=y, x=x, cov=cov, pi=pi, 
+                 yName="Gene1", B=10, seed=123) 
+  
+ensemble$summary
 ```
 
-    ##   cell1_est cell1_se   cell1_p cell2_est cell2_se   cell2_p p_combined
-    ## 1 -1.213994 1.953321 0.5342691 -1.213994 1.953321 0.5342691  0.5342691
+    ##    Gene n_snp_input n_snp_model no_of_models     cv_r2 in_sample_r2 cv_r2_refit
+    ## . Gene1          10         2.2           10 0.5630061    0.5846373   0.6228923
+    ##   in_sample_r2_refit NP CTS NS
+    ## .          0.6411247  0   1  0
 
-## Pretrained models:
+``` r
+ensemble$ensemble_weight
+```
 
-Pretrained models are provided here for epithelial vs. stromal cell
-types in mammary tissues. A total of 125 European ancestry women in GTEx
-was used for model trainig. Training data can be accessed from dbGap
-(Study Accession: phs000424.v9.p2).
+    ## # A tibble: 3 × 5
+    ## # Groups:   yName, xNameMatrix [3]
+    ##   yName xNameMatrix type             weight_cell_1 weight_cell_2
+    ##   <chr> <chr>       <chr>                    <dbl>         <dbl>
+    ## 1 Gene1 SNP1        CellTypeSpecific        0.909         0.0442
+    ## 2 Gene1 SNP4        CellTypeSpecific        0.0267        0.0267
+    ## 3 Gene1 SNP6        CellTypeSpecific        0.0129        0.0129
 
-Note: As the proof of concept, a subset of SNPs reported in the mammary
-tissues in predictdb (<https://predictdb.org>) were used as the SNP pool
-for model training.
+``` r
+ensemble$all_weights
+```
 
-File Path:
-“PreTrainedModel/MiXcan_model_weights_trained_in_GTEx_v8_mammary.tsv”
-
-Users of the pre-trained models can apply the weights to new genotype
-data as in Step 4-5 for cell-type-aware transcriptome-wide association
-studies.
+    ##     ID yName xNameMatrix weight_cell_1 weight_cell_2             type
+    ## 1    1 Gene1        SNP1    0.91042963    0.04152770 CellTypeSpecific
+    ## 2    1 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 3    1 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 4    1 Gene1        SNP4    0.03301747    0.03301747 CellTypeSpecific
+    ## 5    1 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 6    1 Gene1        SNP6    0.00000000    0.00000000 CellTypeSpecific
+    ## 7    1 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 8    1 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 9    1 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 10   1 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 11   2 Gene1        SNP1    0.91042963    0.04152770 CellTypeSpecific
+    ## 12   2 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 13   2 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 14   2 Gene1        SNP4    0.03301747    0.03301747 CellTypeSpecific
+    ## 15   2 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 16   2 Gene1        SNP6    0.00000000    0.00000000 CellTypeSpecific
+    ## 17   2 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 18   2 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 19   2 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 20   2 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 21   3 Gene1        SNP1    0.91490630    0.03824874 CellTypeSpecific
+    ## 22   3 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 23   3 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 24   3 Gene1        SNP4    0.00000000    0.00000000 CellTypeSpecific
+    ## 25   3 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 26   3 Gene1        SNP6    0.00000000    0.00000000 CellTypeSpecific
+    ## 27   3 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 28   3 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 29   3 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 30   3 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 31   4 Gene1        SNP1    0.91042963    0.04152770 CellTypeSpecific
+    ## 32   4 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 33   4 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 34   4 Gene1        SNP4    0.03301747    0.03301747 CellTypeSpecific
+    ## 35   4 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 36   4 Gene1        SNP6    0.00000000    0.00000000 CellTypeSpecific
+    ## 37   4 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 38   4 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 39   4 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 40   4 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 41   5 Gene1        SNP1    0.90482455    0.04996658 CellTypeSpecific
+    ## 42   5 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 43   5 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 44   5 Gene1        SNP4    0.03382514    0.03382514 CellTypeSpecific
+    ## 45   5 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 46   5 Gene1        SNP6    0.03230958    0.03230958 CellTypeSpecific
+    ## 47   5 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 48   5 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 49   5 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 50   5 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 51   6 Gene1        SNP1    0.90482455    0.04996658 CellTypeSpecific
+    ## 52   6 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 53   6 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 54   6 Gene1        SNP4    0.03382514    0.03382514 CellTypeSpecific
+    ## 55   6 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 56   6 Gene1        SNP6    0.03230958    0.03230958 CellTypeSpecific
+    ## 57   6 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 58   6 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 59   6 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 60   6 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 61   7 Gene1        SNP1    0.90482455    0.04996658 CellTypeSpecific
+    ## 62   7 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 63   7 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 64   7 Gene1        SNP4    0.03382514    0.03382514 CellTypeSpecific
+    ## 65   7 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 66   7 Gene1        SNP6    0.03230958    0.03230958 CellTypeSpecific
+    ## 67   7 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 68   7 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 69   7 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 70   7 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 71   8 Gene1        SNP1    0.90482455    0.04996658 CellTypeSpecific
+    ## 72   8 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 73   8 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 74   8 Gene1        SNP4    0.03382514    0.03382514 CellTypeSpecific
+    ## 75   8 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 76   8 Gene1        SNP6    0.03230958    0.03230958 CellTypeSpecific
+    ## 77   8 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 78   8 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 79   8 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 80   8 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 81   9 Gene1        SNP1    0.91490630    0.03824874 CellTypeSpecific
+    ## 82   9 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 83   9 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 84   9 Gene1        SNP4    0.00000000    0.00000000 CellTypeSpecific
+    ## 85   9 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 86   9 Gene1        SNP6    0.00000000    0.00000000 CellTypeSpecific
+    ## 87   9 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 88   9 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 89   9 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 90   9 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
+    ## 91  10 Gene1        SNP1    0.91042963    0.04152770 CellTypeSpecific
+    ## 92  10 Gene1        SNP2    0.00000000    0.00000000 CellTypeSpecific
+    ## 93  10 Gene1        SNP3    0.00000000    0.00000000 CellTypeSpecific
+    ## 94  10 Gene1        SNP4    0.03301747    0.03301747 CellTypeSpecific
+    ## 95  10 Gene1        SNP5    0.00000000    0.00000000 CellTypeSpecific
+    ## 96  10 Gene1        SNP6    0.00000000    0.00000000 CellTypeSpecific
+    ## 97  10 Gene1        SNP7    0.00000000    0.00000000 CellTypeSpecific
+    ## 98  10 Gene1        SNP8    0.00000000    0.00000000 CellTypeSpecific
+    ## 99  10 Gene1        SNP9    0.00000000    0.00000000 CellTypeSpecific
+    ## 100 10 Gene1       SNP10    0.00000000    0.00000000 CellTypeSpecific
