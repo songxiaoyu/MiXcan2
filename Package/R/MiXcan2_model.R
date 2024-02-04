@@ -33,46 +33,41 @@
 MiXcan2_model=function(y, x, cov=NULL, pi,
                  xNameMatrix=NULL, yName=NULL,
                 foldid=NULL) {
-  # clean predictors
-  x=as.matrix(x);
+  # format input
+  x=as.matrix(x); y=as.matrix(y)
   n=nrow(x); p=ncol(x)
-  ci=pi-0.5; z=ci*x; z=as.matrix(z);
-  xx=as.matrix(cbind(ci, x, z))
-
-  # clean outcome -- get rid of the covariate effects
-  y=as.matrix(y)
-  if (is.null(cov)==F) {
-    cov=as.matrix(cov)
-    res=lm(y~cov)$residuals
-    res=as.matrix(res)
-  } else {res=y}
-
   # clean name
   if(is.null(yName)) {yName="Gene"}
   if(is.null(xNameMatrix)) {xNameMatrix=paste0("SNP", 1:p)}
   if (is.null(foldid)) {foldid= sample(1:10, n, replace=T)}
 
+  if (is.null(cov)) {
+    pcov=0; xcov=x;
+    ci=pi-0.5; z=ci*x; xx=as.matrix(cbind(ci, x, z))
+  }
+  if (is.null(cov)==F) {
+    cov=as.matrix(cov)
+    pcov=ncol(cov); xcov=as.matrix(cbind(x, cov))
+    ci=pi-0.5; z=ci*x;
+    xx=as.matrix(cbind(ci, x, z, cov))
+  }
+
+
 
   # tissue model
-  ft00=glmnet::cv.glmnet(x=x, y=res,family="gaussian",  foldid=foldid, alpha=0.5)
-  ft0=glmnet::glmnet(x=x, y=res,  family="gaussian", lambda = ft00$lambda.1se, alpha=0.5)
-  if (ft00$glmnet.fit$df[ft00$index[2]]==0) {
-    est.tissue=c(ft0$a0, rep(0, p))
-  } else {est.tissue=c(ft0$a0,as.numeric(ft0$beta))}
+  ft00=glmnet::cv.glmnet(x=xcov, y=y,family="gaussian",  foldid=foldid, alpha=0.5)
+  ft0=glmnet::glmnet(x=xcov, y=y,  family="gaussian", lambda = ft00$lambda.1se, alpha=0.5)
+  est.tissue=c(ft0$a0,as.numeric(ft0$beta))
 
   # cell type specific model
 
-  ft11=glmnet::cv.glmnet(x=xx, y=res,
+  ft11=glmnet::cv.glmnet(x=xx, y=y,
                          penalty.factor=c(0, rep(1, ncol(xx)-1)),
                          family="gaussian", foldid=foldid, alpha=0.5)
-
-  ft=glmnet::glmnet(x=xx, y=res, penalty.factor=c(0, rep(1, ncol(xx)-1)), family="gaussian",
+  ft=glmnet::glmnet(x=xx, y=y, penalty.factor=c(0, rep(1, ncol(xx)-1)),
+                    family="gaussian",
                     lambda = ft11$lambda.1se, alpha=0.5)
-  if (ft11$glmnet.fit$df[ft11$index[2]]==0 |
-      (ft11$glmnet.fit$df[ft11$index[2]]==1 & ft11$glmnet.fit$beta[1]!=0) ) {
-    est=c(ft$a0, ft$beta[1], rep(0, 2*p))
-  } else {est=c(ft$a0, as.numeric(ft$beta))}
-
+  est=c(ft$a0,as.numeric(ft$beta))
   beta10=est[1]+est[2]/2
   beta20=est[1]-est[2]/2
   beta11=est[3: (p+2)] + est[(p+3): (2*p+2)]/2
@@ -90,10 +85,11 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
     beta.ols.boot=NULL; # beta.en.boot=NULL
     for(boot in 1:200) {
       id=sample(n, n, replace =T)
-      gfit = lm(res[id,]~xx.select[id,])
+      gfit = lm(y[id,]~xx.select[id,])
       beta.ols.boot =rbind(beta.ols.boot, coef(gfit)[-1])
     }
-    beta.range=apply(beta.ols.boot, 2, function(f) quantile(f, prob=c(0.025, 0.975), na.rm=T))
+    beta.range=apply(beta.ols.boot, 2, function(f)
+      quantile(f, prob=c(0.025, 0.975), na.rm=T))
     beta.diff.range=beta.range[, match(idx.nonzero.diff, idx.nonzero)]
     # print(beta.diff.range)
     if (is.null(dim(beta.diff.range))) {
@@ -105,32 +101,74 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
     if (is.na(any.nonzero)==F & any.nonzero==T) {Type ="CellTypeSpecific"}
   }
 
-  # Given model type get weights
-
 
   if (Type!="CellTypeSpecific") {
     beta1=beta2=est.tissue
   } else {
+    if (is.null(cov)) {
       beta1=c(beta10, beta11)
       beta2=c(beta20, beta21)
+    }
+    if (is.null(cov)==F) {
+      beta_cov=est[ (2*p+3): (2*p+2+pcov)]
+      beta1=c(beta10, beta11, beta_cov)
+      beta2=c(beta20, beta21, beta_cov)
+    }
   }
-  beta.all.models=data.frame(est.tissue, beta1, beta2)
+  beta.all.models=cbind(est.tissue, beta1, beta2)
   colnames(beta.all.models)=c("Tissue", "Cell1", "Cell2")
   beta.SNP.cell1=data.frame(xNameMatrix, weight=beta1[2:(p+1)])
   beta.SNP.cell2=data.frame(xNameMatrix, weight=beta2[2:(p+1)])
+
 
   if (suppressWarnings(
     all(c(beta.SNP.cell1$weight, beta.SNP.cell2$weight)==0) )) {
     Type ="NoPredictor"}
 
+  # get in sample R2
+  if (Type=="NonSpecific" | Type=="CellTypeSpecific") {
+    design=cbind(1,x)
+    y_hat=pi*(design %*% beta.all.models[1:(1+p), "Cell1"])+
+      (1-pi)*(design %*% beta.all.models[1:(1+p), "Cell2"])
+    in.sample.r2= cor(y_hat, y)^2
+  } else {in.sample.r2=0}
+
+
   # Given model type get CV R2
+  if (Type=="NonSpecific") {
+    all_r2=NULL
+    for (i in 1:10) {
+      temp=glmnet::glmnet(x=xcov[foldid!=i,], y=y[foldid!=i],  family="gaussian",
+                          lambda = ft00$lambda.1se, alpha=0.5)
+      y_hat=x[foldid==i,] %*% temp$beta[1:p]
+      all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
+    }
+    cv.r2=mean(all_r2)
+  }
+  if (Type=="CellTypeSpecific") {
+    all_r2=NULL
+    for (i in 1:10) {
+      temp=glmnet::glmnet(x=xx[foldid!=i, ], y=y[foldid!=i],
+                          penalty.factor=c(0, rep(1, ncol(xx)-1)),
+                          family="gaussian",
+                          lambda = ft11$lambda.1se, alpha=0.5)
 
-  cts.cv.r2=1-ft11$cvm[ft11$index[2]]/var(res)
-  cts.in.r2=ft$dev.ratio
-  ns.cv.r2=1-ft00$cvm[ft00$index[2]]/var(res)
-  ns.in.r2=ft0$dev.ratio
+      test=c(temp$a0,as.numeric(temp$beta))
+      tbeta10=test[1]+test[2]/2
+      tbeta20=test[1]-test[2]/2
+      tbeta11=test[3: (p+2)] + test[(p+3): (2*p+2)]/2
+      tbeta21=test[3: (p+2)] - test[(p+3): (2*p+2)]/2
+      tbeta1=c(tbeta10, tbeta11)
+      tbeta2=c(tbeta20, tbeta21)
+      tdesign=cbind(1, x[foldid==i, (1:p)] )
+      y_hat= pi[foldid==i] * tdesign %*% tbeta1 +
+        (1-pi[foldid==i]) * tdesign %*% tbeta2
+      all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
+    }
+    cv.r2=mean(all_r2)
+  }
 
-
+  if (Type =="NoPredictor") {cv.r2=0}
 
   return(list(type=Type,
               beta.SNP.cell1=beta.SNP.cell1,
@@ -138,12 +176,15 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
               beta.all.models=beta.all.models,
               glmnet.cell=ft,
               glmnet.tissue=ft0,
-              cts.cv.r2=cts.cv.r2,
-              cts.in.r2=cts.in.r2,
-              ns.cv.r2=ns.cv.r2,
-              ns.in.r2=ns.in.r2,
+              in.sample.r2=in.sample.r2,
+              cv.r2=cv.r2,
               yName=yName,
-              xNameMatrix=xNameMatrix))
+              xNameMatrix=xNameMatrix,
+              foldid=foldid,
+              x=x,
+              y=y,
+              cov=cov,
+              pi=pi))
 
 }
 

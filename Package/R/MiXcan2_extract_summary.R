@@ -13,41 +13,17 @@
 #' @return A data frame with weight for cell 1 and 2, including the potential meta data for the SNP
 #' @export
 #'
-MiXcan2_extract_summary <- function(model, x, y, cov=NULL, pi) {
+MiXcan2_extract_summary <- function(model) {
 
-  weights=model$beta.all.models
-
-  # clean predictors
-  x=as.matrix(x);
-  y=as.matrix(y)
-  if (is.null(cov)==F) {
-    cov=as.matrix(cov)
-    res=lm(y~cov)$residuals
-    res=as.matrix(res)
-  } else {res=y}
-
-  # r calculation includes intercepts
-
-  if (model$type=="NonSpecific") {
-    cv_r2=model$ns.cv.r2
-    in_sample_r2=model$ns.in.r2
-  }
-  if (model$type=="CellTypeSpecific") {
-    cv_r2=model$cts.cv.r2
-    in_sample_r2=model$cts.in.r2
-  }
-  if (model$type=="NoPredictor") {
-    cv_r2=in_sample_r2=0
-  }
-
+  w1=MiXcan2_extract_weight(model=model, keepZeroWeight=T)
   w2=MiXcan2_extract_weight(model=model, keepZeroWeight=F)
 
 
-  summary=data.frame(yName=model$yName, n_snp_input=ncol(x),
+  summary=data.frame(yName=model$yName, n_snp_input=nrow(w1),
                 n_snp_model=nrow(w2),
                 model_type=model$type,
-                cv_r2=cv_r2,
-                in_sample_r2=in_sample_r2)
+                in_sample_r2=model$in.sample.r2,
+                cv_r2=model$cv.r2)
 
   return(summary)
 }

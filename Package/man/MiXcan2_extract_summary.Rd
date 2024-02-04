@@ -4,7 +4,7 @@
 \alias{MiXcan2_extract_summary}
 \title{Extract the gene expression prediction summary}
 \usage{
-MiXcan2_extract_summary(model, x, y, cov = NULL, pi)
+MiXcan2_extract_summary(model)
 }
 \arguments{
 \item{model}{A direct output from MiXcan() function, which includes the

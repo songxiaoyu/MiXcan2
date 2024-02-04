@@ -2,7 +2,7 @@
 #'
 #' Extract the gene expression prediction weights matrix (elastic net regression coefficients) from MiXcan() function.
 #' The output can be directly applied to GWAS data for cell-type specific TWAS.
-#'
+#' @import dplyr
 #' @param model A direct output from MiXcan() function, which includes the
 #' prediction weights as well as other summaries of the prediction models.
 #' @param keepZeroWeight Default=F. Whether to keep SNPs that have zero weights in all cell types.
@@ -17,7 +17,7 @@ MiXcan2_extract_weight <- function(model, keepZeroWeight=F) {
     inner_join(model$beta.SNP.cell2 %>%
                  dplyr::rename(weight_cell_2 = weight)) %>%
     mutate(type = model$type) %>%
-    add_column(yName=model$yName, .before = 1)
+    tibble::add_column(yName=model$yName, .before = 1)
 
   if (keepZeroWeight==F) {
     result_weight_gene_once = result_weight_gene_once %>%

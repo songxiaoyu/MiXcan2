@@ -4,21 +4,11 @@
 \alias{MiXcan2_refit}
 \title{Un-penalized weights for MiXcan selected SNPs}
 \usage{
-MiXcan2_refit(model, x, y, cov, pi, foldid = NULL, keepZeroWeight = F)
+MiXcan2_refit(model, keepZeroWeight = F)
 }
 \arguments{
 \item{model}{A direct output from MiXcan() function, which includes the
 prediction weights as well as other summaries of the prediction models.}
-
-\item{y:}{The pre-cleaned expression level data for a single gene in N samples.}
-
-\item{x:}{A N by P matrix for all the genetic predictors used to predict the genetically regulated expression  of the gene.}
-
-\item{cov:}{A N by Q matrix for the covariates adjusted in the model (e.g. age, population stratification).}
-
-\item{pi:}{An estimation of cell-type faction of the cell type of interest (e.g.
-epithelial). It can be estimated using existing methods
-in the literature or from the output of pi_estimation function.}
 
 \item{keepZeroWeight:}{Whether to keep predictors with zero weights.}
 }
