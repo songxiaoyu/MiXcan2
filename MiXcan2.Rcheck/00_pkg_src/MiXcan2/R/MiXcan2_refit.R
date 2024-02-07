@@ -43,7 +43,6 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
       y_hat=as.matrix(xreduced[foldid==i,]) %*% temp$beta[1:pr]
       all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
     }
-    all_r2[is.na(all_r2)]=0
     cv.r2.refit=mean(all_r2)
   }
 
@@ -89,7 +88,6 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
 
       all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
     }
-    all_r2[is.na(all_r2)]=0
     cv.r2.refit=mean(all_r2)
   }
 

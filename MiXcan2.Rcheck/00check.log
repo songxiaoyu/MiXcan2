@@ -1,0 +1,152 @@
+* using log directory ‘/Users/songxiaoyu152/Dropbox/Density_Song/Paper_MiXcan2/Github/MiXcan2.Rcheck’
+* using R version 4.2.3 (2023-03-15)
+* using platform: x86_64-apple-darwin17.0 (64-bit)
+* using session charset: UTF-8
+* using options ‘--no-manual --as-cran’
+* checking for file ‘MiXcan2/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘MiXcan2’ version ‘0.1.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘MiXcan2’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for future file timestamps ... OK
+* checking DESCRIPTION meta-information ... WARNING
+Invalid license file pointers: LICENSE
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking R files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... WARNING
+'::' or ':::' imports not declared from:
+  ‘ACAT’ ‘tibble’
+Namespaces in Imports field not imported from:
+  ‘doParallel’ ‘tidyverse’
+  All declared Imports should be used.
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+MiXcan2_association: no visible binding for global variable ‘gaussian’
+MiXcan2_association: no visible global function definition for ‘glm’
+MiXcan2_association: no visible global function definition for
+  ‘as.formula’
+MiXcan2_association: no visible binding for global variable ‘term’
+MiXcan2_association: no visible global function definition for ‘cor’
+MiXcan2_association: no visible binding for global variable ‘estimate’
+MiXcan2_association: no visible binding for global variable ‘std.error’
+MiXcan2_association: no visible binding for global variable ‘p.value’
+MiXcan2_ensemble: no visible global function definition for ‘foreach’
+MiXcan2_ensemble: no visible binding for global variable ‘model_type’
+MiXcan2_ensemble: no visible binding for global variable ‘n_snp_input’
+MiXcan2_ensemble: no visible binding for global variable ‘cv_r2_refit’
+MiXcan2_ensemble: no visible binding for global variable ‘NP’
+MiXcan2_ensemble: no visible binding for global variable
+  ‘weight_cell_1’
+MiXcan2_ensemble: no visible binding for global variable
+  ‘weight_cell_2’
+MiXcan2_extract_weight: no visible binding for global variable ‘weight’
+MiXcan2_extract_weight: no visible binding for global variable
+  ‘weight_cell_1’
+MiXcan2_extract_weight: no visible binding for global variable
+  ‘weight_cell_2’
+MiXcan2_model: no visible global function definition for ‘lm’
+MiXcan2_model: no visible global function definition for ‘coef’
+MiXcan2_model : <anonymous>: no visible global function definition for
+  ‘quantile’
+MiXcan2_model: no visible global function definition for ‘cor’
+MiXcan2_refit: no visible global function definition for ‘cor’
+MiXcan2_refit: no visible binding for global variable ‘weight_cell_1’
+MiXcan2_refit: no visible binding for global variable ‘weight_cell_2’
+calculateLL.1d : <anonymous>: no visible global function definition for
+  ‘dnorm’
+deNet_purity: no visible binding for global variable ‘sd’
+deNet_purity: no visible global function definition for ‘var’
+deNet_purity: no visible global function definition for ‘%dopar%’
+deNet_purity: no visible global function definition for ‘foreach’
+deNet_purity : <anonymous> : f: no visible global function definition
+  for ‘dnorm’
+deNet_purity : <anonymous>: no visible global function definition for
+  ‘optim’
+deNet_purity : <anonymous> : f: no visible global function definition
+  for ‘dbeta’
+deNet_purity : f: no visible global function definition for ‘dbeta’
+deNet_purity: no visible global function definition for ‘optim’
+pi_estimation: no visible global function definition for ‘%dopar%’
+pi_estimation: no visible global function definition for ‘foreach’
+pi_estimation: no visible binding for global variable ‘i’
+pi_estimation: no visible binding for global variable ‘prop’
+Undefined global functions or variables:
+  %dopar% NP as.formula coef cor cv_r2_refit dbeta dnorm estimate
+  foreach gaussian glm i lm model_type n_snp_input optim p.value prop
+  quantile sd std.error term var weight weight_cell_1 weight_cell_2
+Consider adding
+  importFrom("stats", "as.formula", "coef", "cor", "dbeta", "dnorm",
+             "gaussian", "glm", "lm", "optim", "quantile", "sd", "var")
+to your NAMESPACE file.
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd line widths ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘GTEx_epithelial_genes’ ‘GTEx_prior’ ‘cov_example’ ‘deNet_purity’
+  ‘new_X_example’ ‘new_cov_example’ ‘new_outcome_example’ ‘x_example’
+  ‘y_example’
+Undocumented data sets:
+  ‘GTEx_epithelial_genes’ ‘GTEx_prior’ ‘cov_example’ ‘new_X_example’
+  ‘new_cov_example’ ‘new_outcome_example’ ‘x_example’ ‘y_example’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Undocumented arguments in documentation object 'MiXcan2_association'
+  ‘new_y’ ‘new_cov’ ‘new_outcome’ ‘family’
+Documented arguments not in \usage in documentation object 'MiXcan2_association':
+  ‘new_y:’ ‘new_cov:’ ‘new_outcome:’ ‘family:’
+
+Documented arguments not in \usage in documentation object 'MiXcan2_extract_summary':
+  ‘y:’ ‘x:’ ‘cov:’ ‘pi:’
+
+Undocumented arguments in documentation object 'MiXcan2_refit'
+  ‘keepZeroWeight’
+Documented arguments not in \usage in documentation object 'MiXcan2_refit':
+  ‘keepZeroWeight:’
+
+Undocumented arguments in documentation object 'pi_estimation'
+  ‘expression_matrix’ ‘n_iteration’ ‘prior’
+Documented arguments not in \usage in documentation object 'pi_estimation':
+  ‘expression_matrix:’ ‘n_iteration:’ ‘prior:’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking examples ... NONE
+* checking for non-standard things in the check directory ... OK
+* checking for detritus in the temp directory ... OK
+* DONE
+Status: 4 WARNINGs, 1 NOTE

@@ -1,0 +1,17 @@
+MiXcan2_association     Association analysis with MiXcan predicted
+                        genetically regulated expression
+MiXcan2_ensemble        MiXcan2 Ensemble
+MiXcan2_extract_summary
+                        Extract the gene expression prediction summary
+MiXcan2_extract_weight
+                        Extract the gene expression prediction weights
+                        matrix
+MiXcan2_model           Estimate the cell-type level prediction weights
+                        of a gene.
+MiXcan2_prediction      Predict the cell-type specific or non-specific
+                        expression levels of a gene with MiXcan model
+                        in new genetic data.
+MiXcan2_refit           Un-penalized weights for MiXcan selected SNPs
+pi_estimation           A function to get robust cell-type composition
+                        estimation based on the prior estimates and
+                        transcriptomic data.

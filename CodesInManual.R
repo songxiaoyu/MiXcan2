@@ -56,7 +56,7 @@ MiXcan_refit$summary
 # MiXcan2 Ensemble -------
 ensemble=MiXcan2_ensemble(y=y, x=x, cov=cov, pi=pi, 
                  yName="Gene1", B=5, seed=123) 
-  
-ensemble$summary
+ensemble$ensemble_summary_by_type
+ensemble$ensemble_summary
 ensemble$ensemble_weight
 ensemble$all_weights
