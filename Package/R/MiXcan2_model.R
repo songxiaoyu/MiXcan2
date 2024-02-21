@@ -138,7 +138,8 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   if (Type=="NonSpecific") {
     all_r2=NULL
     for (i in 1:10) {
-      temp=glmnet::glmnet(x=xcov[foldid!=i,], y=y[foldid!=i],  family="gaussian",
+      temp=glmnet::glmnet(x=as.matrix(xcov[foldid!=i,]), y=y[foldid!=i],
+                          family="gaussian",
                           lambda = ft00$lambda.1se, alpha=0.5)
       y_hat=as.matrix(x[foldid==i,]) %*% temp$beta[1:p]
       all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)

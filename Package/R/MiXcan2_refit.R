@@ -65,7 +65,8 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     w$weight_cell_2[w$weight_cell_2!=0]=tbeta21
 
     # in sample r2
-    y_hat=pi* cbind(1, xreduced) %*% tbeta1 + (1-pi)* cbind(1, xreduced) %*% tbeta2
+    y_hat=pi* cbind(1, xreduced) %*% tbeta1 +
+      (1-pi)* cbind(1, xreduced) %*% tbeta2
     in.sample.r2.refit=cor(y_hat, y)^2
 
     # cv r2
