@@ -33,7 +33,9 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
       w$weight_cell_2[w$weight_cell_2!=0]=as.numeric(beta)
 
     # in sample c2
-    in.sample.r2.refit=cor(xreduced%*%beta, y)^2
+    y_hat=xreduced%*%beta
+    in.sample.r2.refit=1-sum( (y-y_hat)^2)/sum(y^2)
+
     # cv r2
     all_r2=NULL
     for (i in 1:10) {
@@ -41,7 +43,9 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
                           family="gaussian",
                           lambda = 1e-3, alpha=0)
       y_hat=as.matrix(xreduced[foldid==i,]) %*% temp$beta[1:pr]
-      all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
+      r2_temp=1-sum( (y[foldid==i]-y_hat)^2)/sum(y[foldid==i]^2)
+
+      all_r2=c(all_r2, r2_temp)
     }
     all_r2[is.na(all_r2)]=0
     cv.r2.refit=mean(all_r2)
@@ -67,7 +71,9 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     # in sample r2
     y_hat=pi* cbind(1, xreduced) %*% tbeta1 +
       (1-pi)* cbind(1, xreduced) %*% tbeta2
-    in.sample.r2.refit=cor(y_hat, y)^2
+
+    in.sample.r2.refit=1-sum( (y-y_hat)^2)/sum(y^2)
+
 
     # cv r2
 
@@ -87,8 +93,9 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
       tdesign=cbind(1, xreduced[foldid==i,] )
       y_hat= pi[foldid==i] * tdesign %*% tbeta1 +
         (1-pi[foldid==i]) * tdesign %*% tbeta2
+      r2_temp=1-sum( (y[foldid==i]-y_hat)^2)/sum(y[foldid==i]^2)
+      all_r2=c(all_r2, r2_temp)
 
-      all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
     }
     all_r2[is.na(all_r2)]=0
     cv.r2.refit=mean(all_r2)
