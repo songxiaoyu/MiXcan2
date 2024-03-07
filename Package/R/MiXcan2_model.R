@@ -220,7 +220,9 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
 }
 
 
-metrics=function(y_hat, y_tilde, y) {
+metrics=function(y_hat,  # should include intercept
+                 y_tilde, # y-z*gamma
+                 y) {
   unadj.cor= cor(y_hat, y)
   adj.cor= cor(y_hat, y_tilde)
   unadj.R2= 1-sum((y-y_hat)^2)/sum((y-mean(y))^2)
