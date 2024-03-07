@@ -34,8 +34,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
                  xNameMatrix=NULL, yName=NULL,
                 foldid=NULL) {
   # format input
-  x=as.matrix(x); y=as.matrix(y)
-  n=nrow(x); p=ncol(x)
+  x=as.matrix(x); y=as.matrix(y);n=nrow(x); p=ncol(x)
   # clean name
   if(is.null(yName)) {yName="Gene"}
   if(is.null(xNameMatrix)) {xNameMatrix=paste0("SNP", 1:p)}
@@ -48,8 +47,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   if (is.null(cov)==F) {
     cov=as.matrix(cov)
     pcov=ncol(cov); xcov=as.matrix(cbind(x, cov))
-    ci=pi-0.5; z=ci*x;
-    xx=as.matrix(cbind(ci, x, z, cov))
+    ci=pi-0.5; z=ci*x;xx=as.matrix(cbind(ci, x, z, cov))
   }
 
 
@@ -104,15 +102,14 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
 
   if (Type!="CellTypeSpecific") {
     beta1=beta2=est.tissue
-  } else {
+  } else { # CellTypeSpecific
     if (is.null(cov)) {
       beta1=c(beta10, beta11)
       beta2=c(beta20, beta21)
     }
     if (is.null(cov)==F) {
-      beta_cov=est[ (2*p+3): (2*p+2+pcov)]
-      beta1=c(beta10, beta11, beta_cov)
-      beta2=c(beta20, beta21, beta_cov)
+      beta1=c(beta10, beta11, est[ (2*p+3): (2*p+2+pcov)])
+      beta2=c(beta20, beta21, est[ (2*p+3): (2*p+2+pcov)])
     }
   }
   beta.all.models=cbind(est.tissue, beta1, beta2)
@@ -125,32 +122,48 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
     all(c(beta.SNP.cell1$weight, beta.SNP.cell2$weight)==0) )) {
     Type ="NoPredictor"}
 
-  # get in sample R2
+  # ---- get in sample metrics ------
   if (Type=="NonSpecific" | Type=="CellTypeSpecific") {
     design=cbind(1,x)
+
     y_hat=pi*(design %*% beta.all.models[1:(1+p), "Cell1"])+
       (1-pi)*(design %*% beta.all.models[1:(1+p), "Cell2"])
-    in.sample.r2= 1-sum( (y-y_hat)^2)/sum(y^2)
-  } else {in.sample.r2=0}
+
+    if (is.null(cov)==F) {
+      beta_cov = beta1[ (p+2): length(beta1)]
+      y_tilde=y-cov %*%beta_cov
+    } else {y_tilde=y}
+
+    in.sample=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
+
+  } else {in.sample=rep(0, 4)}
 
 
-  # Given model type get CV R2
+  # ---- get CV metrics ------
   if (Type=="NonSpecific") {
-    all_r2=NULL
+    all_metrics=NULL
     for (i in 1:10) {
       temp=glmnet::glmnet(x=as.matrix(xcov[foldid!=i,]), y=y[foldid!=i],
                           family="gaussian",
                           lambda = ft00$lambda.1se, alpha=0.5)
-      y_hat=as.matrix(x[foldid==i,]) %*% temp$beta[1:p]
-      r2_temp=1-sum( (y[foldid==i]-y_hat)^2)/sum(y[foldid==i]^2)
 
-      all_r2=c(all_r2, r2_temp)
+      y_hat=as.matrix(x[foldid==i,]) %*% temp$beta[1:p]
+
+      if (is.null(cov)==F) {
+        beta_cov = temp$beta[(p+1): length(temp$beta)]
+        y_tilde=y[foldid==i]-cov[foldid==i,] %*%beta_cov
+      } else {y_tilde=y[foldid==i]}
+      tmt=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y[foldid==i])
+
+
+      all_metrics=rbind(all_metrics, tmt)
     }
-    all_r2[is.na(all_r2)]=0
-    cv.r2=mean(all_r2)
+    all_metrics[is.na(all_metrics)]=0
+    cv=apply(all_metrics, 2, mean)
   }
+
   if (Type=="CellTypeSpecific") {
-    all_r2=NULL
+    all_metrics=NULL
     for (i in 1:10) {
       temp=glmnet::glmnet(x=xx[foldid!=i, ], y=y[foldid!=i],
                           penalty.factor=c(0, rep(1, ncol(xx)-1)),
@@ -164,18 +177,29 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
       tbeta21=test[3: (p+2)] - test[(p+3): (2*p+2)]/2
       tbeta1=c(tbeta10, tbeta11)
       tbeta2=c(tbeta20, tbeta21)
+
       tdesign=cbind(1, x[foldid==i, ] )
+
       y_hat= pi[foldid==i] * tdesign %*% tbeta1 +
         (1-pi[foldid==i]) * tdesign %*% tbeta2
-      r2_temp=1-sum( (y[foldid==i]-y_hat)^2)/sum(y[foldid==i]^2)
 
-      all_r2=c(all_r2, r2_temp)
+      if (is.null(cov)==F) {
+        beta_cov = est[ (2*p+3): (2*p+2+pcov)]
+        y_tilde=y[foldid==i]-cov[foldid==i,] %*%beta_cov
+      } else {y_tilde=y[foldid==i]}
+
+      unadj.cor_temp= cor(y_hat, y[foldid==i])
+      adj.cor_temp= cor(y_hat, y_tilde)
+      unadj.R2_temp= 1-sum((y[foldid==i]-y_hat)^2)/sum((y[foldid==i]-mean(y[foldid==i]))^2)
+      adj.R2_temp= 1-sum((y_tilde-y_hat)^2)/sum((y_tilde-mean(y_tilde))^2)
+
+      all_metrics=rbind(all_metrics, c(cor_temp,unadj.R2_temp,adj.R2_temp ))
     }
-    all_r2[is.na(all_r2)]=0
-    cv.r2=mean(all_r2)
+    all_metrics[is.na(all_metrics)]=0
+    cv=apply(all_metrics, 2, mean)
   }
 
-  if (Type =="NoPredictor") {cv.r2=0}
+  if (Type =="NoPredictor") {cv=rep(0, 4)}
 
   return(list(type=Type,
               beta.SNP.cell1=beta.SNP.cell1,
@@ -183,8 +207,8 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
               beta.all.models=beta.all.models,
               glmnet.cell=ft,
               glmnet.tissue=ft0,
-              in.sample.r2=in.sample.r2,
-              cv.r2=cv.r2,
+              in.sample.metrics=in.sample,
+              cv.metrics=cv,
               yName=yName,
               xNameMatrix=xNameMatrix,
               foldid=foldid,
@@ -196,7 +220,13 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
 }
 
 
-
+metrics=function(y_hat, y_tilde, y) {
+  unadj.cor= cor(y_hat, y)
+  adj.cor= cor(y_hat, y_tilde)
+  unadj.R2= 1-sum((y-y_hat)^2)/sum((y-mean(y))^2)
+  adj.R2= 1-sum((y_tilde-y_hat)^2)/sum((y_tilde-mean(y_tilde))^2)
+  return(c(unadj.cor, adj.cor, unadj.R2, adj.R2))
+}
 
 
 

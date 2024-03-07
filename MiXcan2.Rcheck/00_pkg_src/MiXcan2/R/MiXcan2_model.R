@@ -130,7 +130,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
     design=cbind(1,x)
     y_hat=pi*(design %*% beta.all.models[1:(1+p), "Cell1"])+
       (1-pi)*(design %*% beta.all.models[1:(1+p), "Cell2"])
-    in.sample.r2= cor(y_hat, y)^2
+    in.sample.r2= 1-sum( (y-y_hat)^2)/sum(y^2)
   } else {in.sample.r2=0}
 
 
@@ -138,11 +138,15 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   if (Type=="NonSpecific") {
     all_r2=NULL
     for (i in 1:10) {
-      temp=glmnet::glmnet(x=xcov[foldid!=i,], y=y[foldid!=i],  family="gaussian",
+      temp=glmnet::glmnet(x=as.matrix(xcov[foldid!=i,]), y=y[foldid!=i],
+                          family="gaussian",
                           lambda = ft00$lambda.1se, alpha=0.5)
-      y_hat=x[foldid==i,] %*% temp$beta[1:p]
-      all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
+      y_hat=as.matrix(x[foldid==i,]) %*% temp$beta[1:p]
+      r2_temp=1-sum( (y[foldid==i]-y_hat)^2)/sum(y[foldid==i]^2)
+
+      all_r2=c(all_r2, r2_temp)
     }
+    all_r2[is.na(all_r2)]=0
     cv.r2=mean(all_r2)
   }
   if (Type=="CellTypeSpecific") {
@@ -160,11 +164,14 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
       tbeta21=test[3: (p+2)] - test[(p+3): (2*p+2)]/2
       tbeta1=c(tbeta10, tbeta11)
       tbeta2=c(tbeta20, tbeta21)
-      tdesign=cbind(1, x[foldid==i, (1:p)] )
+      tdesign=cbind(1, x[foldid==i, ] )
       y_hat= pi[foldid==i] * tdesign %*% tbeta1 +
         (1-pi[foldid==i]) * tdesign %*% tbeta2
-      all_r2=c(all_r2, cor(y_hat, y[foldid==i])^2)
+      r2_temp=1-sum( (y[foldid==i]-y_hat)^2)/sum(y[foldid==i]^2)
+
+      all_r2=c(all_r2, r2_temp)
     }
+    all_r2[is.na(all_r2)]=0
     cv.r2=mean(all_r2)
   }
 

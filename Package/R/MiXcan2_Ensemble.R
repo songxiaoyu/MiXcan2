@@ -48,7 +48,7 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
   # summarize B results -- summary
   a=lapply(1:B, function(f) res[[f]]$summary) %>% rlist::list.rbind()
   sum1=a %>%  group_by(model_type) %>%
-     summarise(across(n_snp_input:cv_r2_refit, mean)) %>%
+     summarise(across(n_snp_input:cv.adj.R2.refit, mean)) %>%
      mutate(Gene=a[1,1],.before = 1)
   sum2=a %>% mutate(CTS= 1*(model_type=="CellTypeSpecific")) %>%
     mutate(NS=1*(model_type=="NonSpecific")) %>%
@@ -75,10 +75,17 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
     summarise_at(vars("weight_cell_1", "weight_cell_2"), mean) %>%
     filter(weight_cell_1!=0 |weight_cell_2 !=0)
 
+  CTS_weight=ensemble_weight %>%
+    filter(type=="CellTypeSpecific")
+  NS_weight=ensemble_weight %>%
+    filter(type=="NonSpecific")
 
   return(list(ensemble_summary= sum2,
               ensemble_summary_by_type=sum1,
               ensemble_weight=ensemble_weight,
-              all_summary=a, all_weights=ww))
+              CTS_weight=CTS_weight,
+              NS_weight=NS_weight,
+              all_summary=a,
+              all_weights=ww))
 
 }

@@ -14,5 +14,5 @@ Imports: doParallel, tidyverse, Matrix, glmnet, broom, rlist, dplyr,
         foreach,
 Remotes: github::yaowuliu/ACAT
 NeedsCompilation: no
-Packaged: 2024-02-07 19:29:13 UTC; songxiaoyu152
+Packaged: 2024-02-28 16:35:51 UTC; songxiaoyu152
 Depends: R (>= 3.5.0)

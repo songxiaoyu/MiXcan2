@@ -69,8 +69,6 @@ MiXcan2_model: no visible global function definition for ‘lm’
 MiXcan2_model: no visible global function definition for ‘coef’
 MiXcan2_model : <anonymous>: no visible global function definition for
   ‘quantile’
-MiXcan2_model: no visible global function definition for ‘cor’
-MiXcan2_refit: no visible global function definition for ‘cor’
 MiXcan2_refit: no visible binding for global variable ‘weight_cell_1’
 MiXcan2_refit: no visible binding for global variable ‘weight_cell_2’
 calculateLL.1d : <anonymous>: no visible global function definition for

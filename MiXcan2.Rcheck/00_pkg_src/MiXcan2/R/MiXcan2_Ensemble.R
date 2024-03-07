@@ -67,7 +67,8 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
     ww=rbind(ww, w)
   }
 
-  name_temp=setdiff(colnames(ww), c("ID", "weight_cell_1", "weight_cell_2"))
+  name_temp=setdiff(colnames(ww), c("ID", "weight_cell_1",
+                                    "weight_cell_2"))
 
   ensemble_weight= ww%>%
      group_by_at(name_temp) %>%
