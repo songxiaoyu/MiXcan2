@@ -91,6 +91,7 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     if (is.null(cov)==F) {
       y_tilde=y-cov %*% test[(2*pr+3): (length(test))]
     } else (y_tilde=y)
+
     in.sample.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
 
 

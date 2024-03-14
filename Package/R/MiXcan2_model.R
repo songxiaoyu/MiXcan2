@@ -147,7 +147,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
                           family="gaussian",
                           lambda = ft00$lambda.1se, alpha=0.5)
 
-      y_hat=as.matrix(x[foldid==i,]) %*% temp$beta[1:p]
+      y_hat=cbind(1, x[foldid==i,]) %*% c(temp$a0, temp$beta[1:p])
 
       if (is.null(cov)==F) {
         beta_cov = temp$beta[(p+1): length(temp$beta)]
@@ -184,7 +184,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
         (1-pi[foldid==i]) * tdesign %*% tbeta2
 
       if (is.null(cov)==F) {
-        beta_cov = est[ (2*p+3): (2*p+2+pcov)]
+        beta_cov = test[ (2*p+3): (2*p+2+pcov)]
         y_tilde=y[foldid==i]-cov[foldid==i,] %*%beta_cov
       } else {y_tilde=y[foldid==i]}
 
