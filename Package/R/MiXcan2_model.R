@@ -188,12 +188,8 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
         y_tilde=y[foldid==i]-cov[foldid==i,] %*%beta_cov
       } else {y_tilde=y[foldid==i]}
 
-      unadj.cor_temp= cor(y_hat, y[foldid==i])
-      adj.cor_temp= cor(y_hat, y_tilde)
-      unadj.R2_temp= 1-sum((y[foldid==i]-y_hat)^2)/sum((y[foldid==i]-mean(y[foldid==i]))^2)
-      adj.R2_temp= 1-sum((y_tilde-y_hat)^2)/sum((y_tilde-mean(y_tilde))^2)
-
-      all_metrics=rbind(all_metrics, c(cor_temp,unadj.R2_temp,adj.R2_temp ))
+      tmt=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y[foldid==i])
+      all_metrics=rbind(all_metrics, tmt)
     }
     all_metrics[is.na(all_metrics)]=0
     cv=apply(all_metrics, 2, mean)
