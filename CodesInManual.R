@@ -31,7 +31,7 @@ x=x_example
 y=y_example
 cov=cov_example
 
-n=200
+n=10000
 x=matrix(rbinom(n*2, 2, 0.3),ncol=2)
 pi=rbeta(n, 2,3)
 y=pi*(1+5*x[,1])+rnorm(n)

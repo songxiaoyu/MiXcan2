@@ -54,12 +54,14 @@ MiXcan2_association: no visible binding for global variable ‘p.value’
 MiXcan2_ensemble: no visible global function definition for ‘foreach’
 MiXcan2_ensemble: no visible binding for global variable ‘model_type’
 MiXcan2_ensemble: no visible binding for global variable ‘n_snp_input’
-MiXcan2_ensemble: no visible binding for global variable ‘cv_r2_refit’
+MiXcan2_ensemble: no visible binding for global variable
+  ‘cv.adj.R2.refit’
 MiXcan2_ensemble: no visible binding for global variable ‘NP’
 MiXcan2_ensemble: no visible binding for global variable
   ‘weight_cell_1’
 MiXcan2_ensemble: no visible binding for global variable
   ‘weight_cell_2’
+MiXcan2_ensemble: no visible binding for global variable ‘type’
 MiXcan2_extract_weight: no visible binding for global variable ‘weight’
 MiXcan2_extract_weight: no visible binding for global variable
   ‘weight_cell_1’
@@ -85,14 +87,16 @@ deNet_purity : <anonymous> : f: no visible global function definition
   for ‘dbeta’
 deNet_purity : f: no visible global function definition for ‘dbeta’
 deNet_purity: no visible global function definition for ‘optim’
+metrics: no visible global function definition for ‘cor’
 pi_estimation: no visible global function definition for ‘%dopar%’
 pi_estimation: no visible global function definition for ‘foreach’
 pi_estimation: no visible binding for global variable ‘i’
 pi_estimation: no visible binding for global variable ‘prop’
 Undefined global functions or variables:
-  %dopar% NP as.formula coef cor cv_r2_refit dbeta dnorm estimate
+  %dopar% NP as.formula coef cor cv.adj.R2.refit dbeta dnorm estimate
   foreach gaussian glm i lm model_type n_snp_input optim p.value prop
-  quantile sd std.error term var weight weight_cell_1 weight_cell_2
+  quantile sd std.error term type var weight weight_cell_1
+  weight_cell_2
 Consider adding
   importFrom("stats", "as.formula", "coef", "cor", "dbeta", "dnorm",
              "gaussian", "glm", "lm", "optim", "quantile", "sd", "var")

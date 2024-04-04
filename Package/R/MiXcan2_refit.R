@@ -11,15 +11,10 @@
 #'
 MiXcan2_refit <- function(model, keepZeroWeight=F) {
 
-  x=model$x;y=model$y; cov=model$cov;
+  x=model$x;y=model$y; cov=model$cov; n=nrow(x)
   type=model$type; pi=model$pi; foldid=model$foldid
   w <- MiXcan2_extract_weight(model = model, keepZeroWeight = T)
   summary <- MiXcan2_extract_summary(model = model)
-
-  # NoPredictor - no performance
-  if (type=="NoPredictor") {cv.refit=in.sample.refit=rep(0, 4)}
-
-
 
 
   snpidx=Matrix::which(w$weight_cell_1 !=0 | w$weight_cell_2!=0)
@@ -30,10 +25,12 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     xr_cov=cbind(xreduced, cov)
     xxreduced=as.matrix(cbind(ci, xreduced, zreduced, cov))
   } else {
-    xr_cov=xreduced
-    xxreduced=as.matrix(cbind(ci, xreduced, zreduced))
+    xr_cov=xreduced # nonspecific to use
+    xxreduced=as.matrix(cbind(ci, xreduced, zreduced)) # CTS to use
   }
 
+  # NoPredictor - no performance
+  if (type=="NoPredictor") {in.sample.refit=cv.refit=rep(0, 4)}
   # NonSpecific
   if (type=="NonSpecific") {
     ft=glmnet::glmnet(x=xr_cov, y=y, family = "gaussian",
@@ -51,21 +48,17 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     in.sample.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
 
     # cv metrics
-    all_metrics=NULL
+    y_hat=y_tilde= rep(NA, n)
     for (i in 1:10) {
       temp=glmnet::glmnet(x=xr_cov[foldid!=i,], y=y[foldid!=i],
                           family="gaussian",
                           lambda = 1e-3, alpha=0)
-      y_hat=cbind(1, xreduced[foldid==i,]) %*% c(temp$a0, temp$beta[1:pr])
+      y_hat[foldid==i]=cbind(1, xreduced[foldid==i,]) %*% c(temp$a0, temp$beta[1:pr])
       if (is.null(cov)==F) {
-        y_tilde=y[foldid==i]-cov[foldid==i,] %*% temp$beta[(pr+1): (length(temp$beta))]
-      } else (y_tilde=y[foldid==i])
-      tmt=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y[foldid==i])
-
-      all_metrics=rbind(all_metrics, tmt)
+        y_tilde[foldid==i]=y[foldid==i]-cov[foldid==i,] %*% temp$beta[(pr+1): (length(temp$beta))]
+      } else (y_tilde[foldid==i]=y[foldid==i])
     }
-    all_metrics[is.na(all_metrics)]=0
-    cv.refit=apply(all_metrics, 2, mean)
+    cv.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
   }
 
   # CellTypeSpecific
@@ -97,7 +90,7 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
 
     # cv metrics
 
-    all_metrics=NULL
+    y_hat=y_tilde= rep(NA, n)
     for (i in 1:10) {
       temp=glmnet::glmnet(x=xxreduced[foldid!=i,], y=y[foldid!=i],
                           family="gaussian",
@@ -111,19 +104,15 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
       tbeta2=c(tbeta20, tbeta21)
 
       tdesign=cbind(1, xreduced[foldid==i,] )
-      y_hat= pi[foldid==i] * tdesign %*% tbeta1 +
+      y_hat[foldid==i]= pi[foldid==i] * tdesign %*% tbeta1 +
         (1-pi[foldid==i]) * tdesign %*% tbeta2
 
       if (is.null(cov)==F) {
-        y_tilde=y[foldid==i]-as.matrix(cov[foldid==i,]) %*% test[(2*pr+3): (length(test))]
-      } else (y_tilde=y[foldid==i])
-      tmt=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y[foldid==i])
-
-      all_metrics=rbind(all_metrics,tmt)
+        y_tilde[foldid==i]=y[foldid==i]-as.matrix(cov[foldid==i,]) %*% test[(2*pr+3): (length(test))]
+      } else (y_tilde[foldid==i]=y[foldid==i])
 
     }
-    all_metrics[is.na(all_metrics)]=0
-    cv.refit=apply(all_metrics, 2, mean)
+    cv.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
   }
 
   if (keepZeroWeight==F) {
@@ -140,7 +129,6 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
                 cv.unadj.R2.refit=cv.refit[3],
                 cv.adj.R2.refit=cv.refit[4])
   summary2= cbind(summary, s2)
-
 
   return(list(weight=w, summary=summary2))
 }

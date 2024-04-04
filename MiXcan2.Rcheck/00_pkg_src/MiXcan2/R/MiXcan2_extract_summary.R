@@ -22,8 +22,14 @@ MiXcan2_extract_summary <- function(model) {
   summary=data.frame(yName=model$yName, n_snp_input=nrow(w1),
                 n_snp_model=nrow(w2),
                 model_type=model$type,
-                in_sample_r2=model$in.sample.r2,
-                cv_r2=model$cv.r2)
+                in.sample.unadj.cor=model$in.sample.metrics[1],
+                in.sample.adj.cor=model$in.sample.metrics[2],
+                in.sample.unadj.R2=model$in.sample.metrics[3],
+                in.sample.adj.R2=model$in.sample.metrics[4],
+                cv.unadj.cor=model$cv.metrics[1],
+                cv.adj.cor=model$cv.metrics[2],
+                cv.unadj.R2=model$cv.metrics[3],
+                cv.adj.R2=model$cv.metrics[4])
 
   return(summary)
 }

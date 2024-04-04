@@ -141,29 +141,25 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
 
   # ---- get CV metrics ------
   if (Type=="NonSpecific") {
-    all_metrics=NULL
+    y_hat=y_tilde=rep(NA, n)
     for (i in 1:10) {
       temp=glmnet::glmnet(x=as.matrix(xcov[foldid!=i,]), y=y[foldid!=i],
                           family="gaussian",
                           lambda = ft00$lambda.1se, alpha=0.5)
 
-      y_hat=cbind(1, x[foldid==i,]) %*% c(temp$a0, temp$beta[1:p])
+      y_hat[foldid==i]=cbind(1, x[foldid==i,]) %*% c(temp$a0, temp$beta[1:p])
 
       if (is.null(cov)==F) {
         beta_cov = temp$beta[(p+1): length(temp$beta)]
-        y_tilde=y[foldid==i]-cov[foldid==i,] %*%beta_cov
-      } else {y_tilde=y[foldid==i]}
-      tmt=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y[foldid==i])
-
-
-      all_metrics=rbind(all_metrics, tmt)
+        y_tilde[foldid==i]=y[foldid==i]-cov[foldid==i,] %*%beta_cov
+      } else {y_tilde[foldid==i]=y[foldid==i]}
     }
-    all_metrics[is.na(all_metrics)]=0
-    cv=apply(all_metrics, 2, mean)
+    cv=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
+
   }
 
   if (Type=="CellTypeSpecific") {
-    all_metrics=NULL
+    y_hat=y_tilde=rep(NA, n)
     for (i in 1:10) {
       temp=glmnet::glmnet(x=xx[foldid!=i, ], y=y[foldid!=i],
                           penalty.factor=c(0, rep(1, ncol(xx)-1)),
@@ -180,19 +176,16 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
 
       tdesign=cbind(1, x[foldid==i, ] )
 
-      y_hat= pi[foldid==i] * tdesign %*% tbeta1 +
+      y_hat[foldid==i]= pi[foldid==i] * tdesign %*% tbeta1 +
         (1-pi[foldid==i]) * tdesign %*% tbeta2
 
       if (is.null(cov)==F) {
         beta_cov = test[ (2*p+3): (2*p+2+pcov)]
-        y_tilde=y[foldid==i]-cov[foldid==i,] %*%beta_cov
-      } else {y_tilde=y[foldid==i]}
+        y_tilde[foldid==i]=y[foldid==i]-cov[foldid==i,] %*%beta_cov
+      } else {y_tilde[foldid==i]=y[foldid==i]}
 
-      tmt=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y[foldid==i])
-      all_metrics=rbind(all_metrics, tmt)
     }
-    all_metrics[is.na(all_metrics)]=0
-    cv=apply(all_metrics, 2, mean)
+    cv=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
   }
 
   if (Type =="NoPredictor") {cv=rep(0, 4)}
