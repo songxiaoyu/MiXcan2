@@ -25,7 +25,7 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
     # set seed
     if (is.null(seed)==F) {seed1=seed+i*13; set.seed(seed1)}
     n=nrow(x)
-    boot_idx=sample(n, n, replace=T)
+    boot_idx=sample(n, round(n*0.9), replace=F)
     yboot=y[boot_idx]
     xboot=as.matrix(x[boot_idx,])
     piboot=pi[boot_idx]
