@@ -29,12 +29,12 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     xxreduced=as.matrix(cbind(ci, xreduced, zreduced)) # CTS to use
   }
 
-  # NoPredictor - no performance
-  if (type=="NoPredictor") {in.sample.refit=cv.refit=rep(0, 4)}
-  # NonSpecific
+  # NoPredictor - no performance -----
+  if (type=="NoPredictor") {in.sample.refit=cv.refit=rep(0, 4); intercept=rep(0, 2)}
+  # NonSpecific ----------
   if (type=="NonSpecific") {
-    ft=glmnet::glmnet(x=xr_cov, y=y, family = "gaussian",
-                      alpha=0, lambda = 1e-3)
+    ft=glmnet::glmnet(x=xr_cov, y=y, family = "gaussian", alpha=0, lambda = 1e-3)
+    intercept=c(ft$a0, ft$a0)
     beta=ft$beta[1:pr]
     # weight
     w$weight_cell_1[w$weight_cell_1!=0]=
@@ -42,30 +42,25 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
 
     # in sample metrics
     y_hat=cbind(1, xreduced)%*%c(ft$a0, beta)
-    if (is.null(cov)==F) {
-      y_tilde=y-cov %*% ft$beta[(pr+1): (length(ft$beta))]
-    } else (y_tilde=y)
+    if (is.null(cov)==F) {y_tilde=y-cov %*% ft$beta[(pr+1): (length(ft$beta))]} else {y_tilde=y}
     in.sample.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
 
     # cv metrics
     y_hat=y_tilde= rep(NA, n)
     for (i in 1:10) {
-      temp=glmnet::glmnet(x=xr_cov[foldid!=i,], y=y[foldid!=i],
-                          family="gaussian",
-                          lambda = 1e-3, alpha=0)
+      temp=glmnet::glmnet(x=xr_cov[foldid!=i,], y=y[foldid!=i],family="gaussian",lambda = 1e-3, alpha=0)
       y_hat[foldid==i]=cbind(1, xreduced[foldid==i,]) %*% c(temp$a0, temp$beta[1:pr])
       if (is.null(cov)==F) {
         y_tilde[foldid==i]=y[foldid==i]-cov[foldid==i,] %*% temp$beta[(pr+1): (length(temp$beta))]
-      } else (y_tilde[foldid==i]=y[foldid==i])
+      } else {y_tilde[foldid==i]=y[foldid==i]}
     }
     cv.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
   }
 
-  # CellTypeSpecific
+  # CellTypeSpecific --------
   if (type=="CellTypeSpecific") {
 
-    temp=glmnet::glmnet(x=xxreduced, y=y, family =
-                        "gaussian", alpha=0, lambda = 0.001)
+    temp=glmnet::glmnet(x=xxreduced, y=y, family ="gaussian", alpha=0, lambda = 0.001)
     test=c(temp$a0,as.numeric(temp$beta))
     tbeta10=test[1]+test[2]/2
     tbeta20=test[1]-test[2]/2
@@ -76,25 +71,17 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     # weight
     w$weight_cell_1[w$weight_cell_1!=0]=tbeta11
     w$weight_cell_2[w$weight_cell_2!=0]=tbeta21
+    intercept=c(tbeta10, tbeta20)
 
     # in sample metrics
-    y_hat=pi* cbind(1, xreduced) %*% tbeta1 +
-      (1-pi)* cbind(1, xreduced) %*% tbeta2
-
-    if (is.null(cov)==F) {
-      y_tilde=y-cov %*% test[(2*pr+3): (length(test))]
-    } else (y_tilde=y)
-
+    y_hat=pi* cbind(1, xreduced) %*% tbeta1 + (1-pi)* cbind(1, xreduced) %*% tbeta2
+    if (is.null(cov)==F) {y_tilde=y-cov %*% test[(2*pr+3): (length(test))]} else {y_tilde=y}
     in.sample.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
 
-
     # cv metrics
-
     y_hat=y_tilde= rep(NA, n)
     for (i in 1:10) {
-      temp=glmnet::glmnet(x=xxreduced[foldid!=i,], y=y[foldid!=i],
-                          family="gaussian",
-                          lambda = 1e-3, alpha=0)
+      temp=glmnet::glmnet(x=xxreduced[foldid!=i,], y=y[foldid!=i],family="gaussian",lambda = 1e-3, alpha=0)
       test=c(temp$a0,as.numeric(temp$beta))
       tbeta10=test[1]+test[2]/2
       tbeta20=test[1]-test[2]/2
@@ -114,7 +101,7 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
     }
     cv.refit=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
   }
-
+  # Clean output --------
   if (keepZeroWeight==F) {
     w = w %>%
       dplyr::filter(!(weight_cell_1 == 0 & weight_cell_2 == 0))
@@ -130,6 +117,6 @@ MiXcan2_refit <- function(model, keepZeroWeight=F) {
                 cv.adj.R2.refit=cv.refit[4])
   summary2= cbind(summary, s2)
 
-  return(list(weight=w, summary=summary2))
+  return(list(weight=w, summary=summary2, intercept=intercept))
 }
 
