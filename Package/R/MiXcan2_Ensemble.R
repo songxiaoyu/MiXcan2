@@ -99,7 +99,7 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
   refit_mean_intercept=sapply(1:2, function(f) tapply(refit_all_intercept[,f], a$model_type, mean))%>%
     matrix(., ncol=2)
   colnames(refit_mean_intercept)=c("intercept_cell_1", "intercept_cell_2")
-  if (nrow(refit_mean_intercept)==2) { rownames(refit_mean_intercept)= C("CTS", "NS")}
+  if (nrow(refit_mean_intercept)==2) { rownames(refit_mean_intercept)= c("CTS", "NS")}
 
   return(list(ensemble_summary= sum2,
               ensemble_summary_by_type=sum1,
