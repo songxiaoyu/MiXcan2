@@ -43,14 +43,11 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   if (is.null(cov)) {
     pcov=0; xcov=x;
     ci=pi-0.5; z=ci*x; xx=as.matrix(cbind(ci, x, z))
-  }
-  if (is.null(cov)==F) {
+  } else {
     cov=as.matrix(cov)
     pcov=ncol(cov); xcov=as.matrix(cbind(x, cov))
     ci=pi-0.5; z=ci*x;xx=as.matrix(cbind(ci, x, z, cov))
   }
-
-
 
   # tissue model
   ft00=glmnet::cv.glmnet(x=xcov, y=y,family="gaussian",  foldid=foldid, alpha=0.5)
@@ -70,7 +67,6 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   beta20=est[1]-est[2]/2
   beta11=est[3: (p+2)] + est[(p+3): (2*p+2)]/2
   beta21=est[3: (p+2)] - est[(p+3): (2*p+2)]/2
-
 
   ## add inference for difference > 0
   Type ="NonSpecific"
@@ -100,14 +96,13 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   }
 
 
-  if (Type!="CellTypeSpecific") {
+  if (Type!="CellTypeSpecific") { # NonSpecific
     beta1=beta2=est.tissue
   } else { # CellTypeSpecific
     if (is.null(cov)) {
       beta1=c(beta10, beta11)
       beta2=c(beta20, beta21)
-    }
-    if (is.null(cov)==F) {
+    } else {
       beta1=c(beta10, beta11, est[ (2*p+3): (2*p+2+pcov)])
       beta2=c(beta20, beta21, est[ (2*p+3): (2*p+2+pcov)])
     }
@@ -116,7 +111,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   colnames(beta.all.models)=c("Tissue", "Cell1", "Cell2")
   beta.SNP.cell1=data.frame(xNameMatrix, weight=beta1[2:(p+1)])
   beta.SNP.cell2=data.frame(xNameMatrix, weight=beta2[2:(p+1)])
-
+  intercept=beta.all.models[1, 2:3]
 
   if (suppressWarnings(
     all(c(beta.SNP.cell1$weight, beta.SNP.cell2$weight)==0) )) {
@@ -204,7 +199,8 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
               x=x,
               y=y,
               cov=cov,
-              pi=pi))
+              pi=pi,
+              intercept=intercept))
 
 }
 

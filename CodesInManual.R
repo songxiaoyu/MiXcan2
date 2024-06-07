@@ -30,12 +30,13 @@ pi=pi_estimation_result$mean_trim_0.05
 x=x_example
 y=y_example
 cov=cov_example
+
 set.seed(123)
-n=10000
+n=4000
 x=matrix(rbinom(n*2, 2, 0.3),ncol=2)
 pi=rbeta(n, 2,3)
-y=pi*(5*x[,1])+rnorm(n)
-cov=NULL
+y=pi*(x[,1])+rnorm(n)
+cov=matrix(rnorm(n*2), ncol=2)
 
 # MiXcan2  -------
 set.seed(123)
