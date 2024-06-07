@@ -72,12 +72,28 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
   original_NS_weight=original_ensemble_weight %>%
     filter(type=="NonSpecific")
 
-  # summarize B results -- original intercept
+  ##### summarize B results -- original intercept
   o_all_intercept=lapply(1:B, function(f) res[[f]]$original_intercept)%>% rlist::list.rbind()
-  original_mean_intercept=sapply(1:2, function(f) tapply(o_all_intercept[,f], a$model_type, mean)) %>%
-    matrix(., ncol=2)
-  colnames(original_mean_intercept)=c("intercept_cell_1", "intercept_cell_2")
-  if (nrow(original_mean_intercept)==2) { rownames(original_mean_intercept)= C("CTS", "NS")}
+  #original_mean_intercept=sapply(1:2, function(f) tapply(o_all_intercept[,f], a$model_type, mean)) %>%
+  #  matrix(., ncol=2)
+  #colnames(original_mean_intercept)=c("intercept_cell_1", "intercept_cell_2")
+  #if (nrow(original_mean_intercept)==2) { rownames(original_mean_intercept)= C("CTS", "NS")}
+
+  ##summarize results taking into account the model_type 
+  # Extract and sort unique model types
+  unique_model_types <- sort(unique(a$model_type))
+  # Ensure that tapply results are ordered according to unique_model_types
+  mean_intercept <- lapply(1:2, function(f) {
+      tapply(o_all_intercept[, f], factor(a$model_type, levels = unique_model_types), mean)
+      
+  })
+  
+  # Convert the result into a matrix
+  original_mean_intercept <- matrix(unlist(mean_intercept), ncol = 2, byrow = FALSE)
+  # Set column names
+  colnames(original_mean_intercept) <- c("intercept_cell_1", "intercept_cell_2")
+  # Set row names based on the sorted unique model types
+  rownames(original_mean_intercept) <- unique_model_types
 
   # summarize B results -- refit weights
   ww=NULL;
@@ -94,12 +110,28 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
   refit_NS_weight=refit_ensemble_weight %>%
     filter(type=="NonSpecific")
 
-  # summarize B results -- refit intercept
+  ##### summarize B results -- refit intercept
   refit_all_intercept=lapply(1:B, function(f) res[[f]]$refit$intercept)%>% rlist::list.rbind()
-  refit_mean_intercept=sapply(1:2, function(f) tapply(refit_all_intercept[,f], a$model_type, mean))%>%
-    matrix(., ncol=2)
-  colnames(refit_mean_intercept)=c("intercept_cell_1", "intercept_cell_2")
-  if (nrow(refit_mean_intercept)==2) { rownames(refit_mean_intercept)= c("CTS", "NS")}
+  #take into account the combination of 3 different model types 
+  #refit_mean_intercept=sapply(1:2, function(f) tapply(refit_all_intercept[,f], a$model_type, mean))%>%
+  #  matrix(., ncol=2)
+  #colnames(refit_mean_intercept)=c("intercept_cell_1", "intercept_cell_2")
+  #if (nrow(refit_mean_intercept)==2) { rownames(refit_mean_intercept)= c("CTS", "NS")}
+  
+  # Extract and sort unique model types
+  unique_model_types <- sort(unique(a$model_type))
+  
+  # Ensure that tapply results are ordered according to unique_model_types
+  mean_intercept <- lapply(1:2, function(f) {
+      tapply(refit_all_intercept[, f], factor(a$model_type, levels = unique_model_types), mean)  
+  })
+  
+  # Convert the result into a matrix
+  refit_mean_intercept <- matrix(unlist(mean_intercept), ncol = 2, byrow = FALSE)
+  # Set column names
+  colnames(refit_mean_intercept) <- c("intercept_cell_1", "intercept_cell_2")
+  # Set row names based on the sorted unique model types
+  rownames(refit_mean_intercept) <- unique_model_types
 
   return(list(ensemble_summary= sum2,
               ensemble_summary_by_type=sum1,
