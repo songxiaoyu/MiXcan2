@@ -7,7 +7,7 @@
 MiXcan2_prediction(weight, new_x)
 }
 \arguments{
-\item{weight}{Weight matrix produced by MiXcan_extract_weight()}
+\item{weight}{Weight matrix produced by MiXcan2_extract_weight()}
 
 \item{new_x}{The genetic data used for prediction in a new data set.}
 }

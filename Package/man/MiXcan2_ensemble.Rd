@@ -34,7 +34,21 @@ such as variable ID, position, rsid, ref_allele, eff_allele.}
 \item{seed}{seed}
 }
 \value{
-A data frame with weight for cell 1 and 2, including the potential meta data for the SNP
+list with 9 elements. It contains
+
+\item{ensemble_summary}{Summarized model descriptions from all B ensemble models.}
+\item{ensemble_summary_by_type}{Summarized model descriptions for Cell-Type-Specific and Non-Specific
+models separately.}
+\item{ensemble_weight}{Prediction weights from B ensemble models summarized separately for
+Cell-Type-Specific and Non-Specific models.}
+\item{ensemble_intecept}{Prediction intercepts from B ensemble models summarized separately for
+Cell-Type-Specific and Non-Specific models.}
+\item{CTS_weight}{Prediction weights summarized from all
+Cell-Type-Specific models.}
+\item{NS_weight}{Prediction weights summarized from all
+Non-Specific models.}
+\item{all_summary}{All B model descriptions w/o summarization (average).}
+\item{all_weights}{All B weights w/o summarization (average).}
 }
 \description{
 MiXcan2 Ensemble

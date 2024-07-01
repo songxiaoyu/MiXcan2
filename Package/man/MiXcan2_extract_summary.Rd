@@ -7,21 +7,12 @@
 MiXcan2_extract_summary(model)
 }
 \arguments{
-\item{model}{A direct output from MiXcan() function, which includes the
+\item{model}{A direct output from MiXcan2() function, which includes the
 prediction weights as well as other summaries of the prediction models.}
-
-\item{y}{The pre-cleaned expression level data for a single gene in N samples.}
-
-\item{x}{A N by P matrix for all the genetic predictors used to predict the genetically regulated expression  of the gene.}
-
-\item{cov}{A N by Q matrix for the covariates adjusted in the model (e.g. age, population stratification).}
-
-\item{pi}{An estimation of cell-type faction of the cell type of interest.}
 }
 \value{
-A data frame with weight for cell 1 and 2, including the potential meta data for the SNP
+A row including summary statistics of the prediction model of the gene.
 }
 \description{
-Extract the gene expression prediction summary (e.g. No of SNPs, R^2, correlation) function.
-The output can be directly applied to GWAS data for cell-type specific TWAS.
+Extract the gene expression prediction summaries, such as  No of SNPs, correlation, R^2.
 }

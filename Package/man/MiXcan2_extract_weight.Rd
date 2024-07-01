@@ -7,7 +7,7 @@
 MiXcan2_extract_weight(model, keepZeroWeight = F)
 }
 \arguments{
-\item{model}{A direct output from MiXcan() function, which includes the
+\item{model}{A direct output from MiXcan2() function, which includes the
 prediction weights as well as other summaries of the prediction models.}
 
 \item{keepZeroWeight}{Default=F. Whether to keep SNPs that have zero weights in all cell types.}

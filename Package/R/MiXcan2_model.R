@@ -7,7 +7,7 @@
 #' @param cov A N by Q matrix for the covariates adjusted in the model (e.g. age, population stratification).
 #' @param pi An estimation of cell-type fraction for the cell type of interest (e.g.
 #' epithelial). It can be obtained using existing methods
-#' in the literature or from the output of pi_estimation function.
+#' in the literature or from the output of `pi_estimation` function.
 #' @param xNameMatrix Default is NULL. A matrix to save the X matrix information,
 #' such as variable ID, position, rsid, ref_allele, eff_allele.
 #' @param yName Default is NULL. A row vector to save the expression information, such as gene ID, gene name.
@@ -15,21 +15,27 @@
 #' is considered if foldid is NULL. Otherwise foldid is used to split the data for CV.
 #' @return list with 9 elements. It contains
 #'
-#' \item{type:}{Whether the prediction model is "CellTypeSpecific" or "NonSpecific".}
-#' \item{beta.SNP.cell1:}{The prediction weights of the genetic predictors in cell type 1 (the cell type of interest).}
-#' \item{beta.SNP.cell2:}{The prediction weights of the genetic predictors in cell type 2 (other cell types).}
-#' \item{beta.all.models:}{All regression coefficients are saved in beta.all.models, including intercepts,
+#' \item{type}{Whether the prediction model is "CellTypeSpecific" or "NonSpecific" or "NoPredictor".}
+#' \item{beta.SNP.cell1}{The prediction weights of the genetic predictors in cell type 1 (the cell type of interest).}
+#' \item{beta.SNP.cell2}{The prediction weights of the genetic predictors in cell type 2 (other cell types).}
+#' \item{beta.all.models}{All regression coefficients are saved in beta.all.models, including intercepts,
 #' coefficients of genetic and non-genetic predictors in cell-type specific and non-specific models.}
-
-#' \item{glmnet.cell:}{The cell-type-level prediction model selected using elastic-net.
+#' \item{glmnet.cell}{The cell-type-level prediction model selected using elastic-net.
 #' This model may not be the final model as elastic-net selected parameters in the two
 #' cell types may not be robustly different.  }
-#' \item{glmnet.tissue:}{The tissue-level prediction model, which does not consider
+#' \item{glmnet.tissue}{The tissue-level prediction model, which does not consider
 #' cell type composition (same as PrediXcan).}
+#' \item{in.sample.metrics}{In-sample correlation and R2.}
+#' \item{cv.metrics}{CV correlation and R2.}
+#' \item{intercept}{Intercepts from the two cell types.}
+#' \item{xNameMatrix}{Output xNameMatrix for summary information.}
+#' \item{yName}{Output yName for summary information.}
 #' @export
 #'
 #'
 #'
+
+
 MiXcan2_model=function(y, x, cov=NULL, pi,
                  xNameMatrix=NULL, yName=NULL,
                 foldid=NULL) {
@@ -188,14 +194,9 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
               glmnet.tissue=ft0,
               in.sample.metrics=in.sample,
               cv.metrics=cv,
-              yName=yName,
+              intercept=intercept,
               xNameMatrix=xNameMatrix,
-              intercept=intercept
-              #foldid=foldid,
-              #x=x,
-              #y=y,
-              #cov=cov,
-              #pi=pi
+              yName=yName
               ))
 
 }

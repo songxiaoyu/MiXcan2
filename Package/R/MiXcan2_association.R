@@ -1,3 +1,5 @@
+
+
 #' Association analysis with MiXcan predicted genetically regulated expression
 #'
 #' The input MiXcan predicted genetically regulated expression levels are at cell-type
@@ -11,7 +13,7 @@
 #' and count variables, and modeled through generalized linear models (GLM).
 #' @param family Same as the family object used in GLM.
 #'
-#' @return A tibble showing the estimate, standard error, p value for cell 1 and 2
+#' @return A tibble showing the estimate, standard error, p value for cell 1 and cell 2
 #' and the combined p-value using the Cauchy combination.
 #' @export
 #'

@@ -1,6 +1,6 @@
 #' Predict the cell-type specific or non-specific expression levels of a gene with MiXcan model in new genetic data.
 #'
-#' @param weight Weight matrix produced by MiXcan_extract_weight()
+#' @param weight Weight matrix produced by MiXcan2_extract_weight()
 #' @param new_x The genetic data used for prediction in a new data set.
 #'
 #' @return A N by 2 matrix indicating the predicted gene expression levels in two

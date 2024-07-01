@@ -18,7 +18,7 @@ and count variables, and modeled through generalized linear models (GLM).}
 \item{family}{Same as the family object used in GLM.}
 }
 \value{
-A tibble showing the estimate, standard error, p value for cell 1 and 2
+A tibble showing the estimate, standard error, p value for cell 1 and cell 2
 and the combined p-value using the Cauchy combination.
 }
 \description{
