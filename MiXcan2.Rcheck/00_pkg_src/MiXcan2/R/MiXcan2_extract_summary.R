@@ -18,18 +18,13 @@ MiXcan2_extract_summary <- function(model) {
   w1=MiXcan2_extract_weight(model=model, keepZeroWeight=T)
   w2=MiXcan2_extract_weight(model=model, keepZeroWeight=F)
 
-
   summary=data.frame(yName=model$yName, n_snp_input=nrow(w1),
                 n_snp_model=nrow(w2),
                 model_type=model$type,
-                in.sample.unadj.cor=model$in.sample.metrics[1],
-                in.sample.adj.cor=model$in.sample.metrics[2],
-                in.sample.unadj.R2=model$in.sample.metrics[3],
-                in.sample.adj.R2=model$in.sample.metrics[4],
-                cv.unadj.cor=model$cv.metrics[1],
-                cv.adj.cor=model$cv.metrics[2],
-                cv.unadj.R2=model$cv.metrics[3],
-                cv.adj.R2=model$cv.metrics[4])
+                in.sample.cor=model$in.sample.metrics[1],
+                in.sample.R2=model$in.sample.metrics[2],
+                cv.cor=model$cv.metrics[1],
+                cv.R2=model$cv.metrics[2])
 
   return(summary)
 }

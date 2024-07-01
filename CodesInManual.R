@@ -56,13 +56,10 @@ MiXcan_weight_result
 MiXcan_summary_result <- MiXcan2_extract_summary(model=model)
 MiXcan_summary_result
 
-# Refit
-MiXcan_refit <- MiXcan2_refit(model = model)
-MiXcan_refit$weight
-MiXcan_refit$summary
+
 # MiXcan2 Ensemble -------
 ensemble=MiXcan2_ensemble(y=y, x=x, cov=cov, pi=pi, 
-                 yName="Gene1", B=10, seed=123) 
+                 yName="Gene1", B=5, seed=123) 
 ensemble$ensemble_summary_by_type
 ensemble$ensemble_summary
 ensemble$ensemble_weight

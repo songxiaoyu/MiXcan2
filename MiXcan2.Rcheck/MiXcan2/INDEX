@@ -11,7 +11,6 @@ MiXcan2_model           Estimate the cell-type level prediction weights
 MiXcan2_prediction      Predict the cell-type specific or non-specific
                         expression levels of a gene with MiXcan model
                         in new genetic data.
-MiXcan2_refit           Un-penalized weights for MiXcan selected SNPs
 pi_estimation           A function to get robust cell-type composition
                         estimation based on the prior estimates and
                         transcriptomic data.

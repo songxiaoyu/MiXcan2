@@ -10,13 +10,13 @@ MiXcan2_extract_summary(model)
 \item{model}{A direct output from MiXcan() function, which includes the
 prediction weights as well as other summaries of the prediction models.}
 
-\item{y:}{The pre-cleaned expression level data for a single gene in N samples.}
+\item{y}{The pre-cleaned expression level data for a single gene in N samples.}
 
-\item{x:}{A N by P matrix for all the genetic predictors used to predict the genetically regulated expression  of the gene.}
+\item{x}{A N by P matrix for all the genetic predictors used to predict the genetically regulated expression  of the gene.}
 
-\item{cov:}{A N by Q matrix for the covariates adjusted in the model (e.g. age, population stratification).}
+\item{cov}{A N by Q matrix for the covariates adjusted in the model (e.g. age, population stratification).}
 
-\item{pi:}{An estimation of cell-type faction of the cell type of interest.}
+\item{pi}{An estimation of cell-type faction of the cell type of interest.}
 }
 \value{
 A data frame with weight for cell 1 and 2, including the potential meta data for the SNP

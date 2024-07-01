@@ -25,7 +25,7 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
     # set seed
     if (is.null(seed)==F) {seed1=seed+i*13; set.seed(seed1)}
     n=nrow(x)
-    boot_idx=sample(n, n, replace=T)
+    boot_idx=sample(n, round(n*0.9), replace=F)
     yboot=y[boot_idx]
     xboot=as.matrix(x[boot_idx,])
     piboot=pi[boot_idx]
@@ -35,21 +35,21 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
 
     # run MiXcan
     model <- MiXcan2_model(y=yboot, x=xboot, cov = covboot,
-                            pi= piboot,
-                            foldid = foldid1, yName=yName,
+                            pi= piboot, foldid = foldid1, yName=yName,
                            xNameMatrix=xNameMatrix)
+    w <- MiXcan2_extract_weight(model = model, keepZeroWeight = T)
+    summary <- MiXcan2_extract_summary(model=model)
+    intercept=model$intercept
 
-    # Refit
-    MiXcan_refit <- MiXcan2_refit(model = model, keepZeroWeight=T)
-
-    return(list(MiXcan_refit))
+    return(list(list(w=w, intercept=intercept, summary=summary)))
   }
 
-  # summarize B results -- summary
+
+  # summarize B results - summary
   a=lapply(1:B, function(f) res[[f]]$summary) %>% rlist::list.rbind()
   sum1=a %>%  group_by(model_type) %>%
-     summarise(across(n_snp_input:cv.adj.R2.refit, mean)) %>%
-     mutate(Gene=a[1,1],.before = 1)
+    summarise(across(n_snp_input:cv.R2, mean)) %>%
+    mutate(Gene=a[1,1],.before = 1)
   sum2=a %>% mutate(CTS= 1*(model_type=="CellTypeSpecific")) %>%
     mutate(NS=1*(model_type=="NonSpecific")) %>%
     mutate(NP=1*(model_type=="NoPredictor")) %>%
@@ -58,34 +58,33 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
     mutate(Gene=a[1,1],.before = 1)
 
 
-  # summarize B results -- weights
+  # summarize B results - weights
+  wo=NULL; for (i in 1:B) {w=res[[i]]$w %>% mutate(ID=i, .before = 1);wo=rbind(wo, w)}
+  name_temp=setdiff(colnames(wo), c("ID", "weight_cell_1", "weight_cell_2"))
 
-  ww=NULL
-  for (i in 1:B) {
-    w=res[[i]]$weight %>%
-      mutate(ID=i, .before = 1)
-    ww=rbind(ww, w)
-  }
-
-  name_temp=setdiff(colnames(ww), c("ID", "weight_cell_1",
-                                    "weight_cell_2"))
-
-  ensemble_weight= ww%>%
-     group_by_at(name_temp) %>%
+  ensemble_weight= wo%>%
+    group_by_at(name_temp) %>%
     summarise_at(vars("weight_cell_1", "weight_cell_2"), mean) %>%
     filter(weight_cell_1!=0 |weight_cell_2 !=0)
 
-  CTS_weight=ensemble_weight %>%
-    filter(type=="CellTypeSpecific")
-  NS_weight=ensemble_weight %>%
-    filter(type=="NonSpecific")
+  CTS_weight=ensemble_weight %>% filter(type=="CellTypeSpecific")
+  NS_weight=ensemble_weight %>% filter(type=="NonSpecific")
+
+  # summarize B results - intercept
+  all_intercept=lapply(1:B, function(f) res[[f]]$intercept)%>% rlist::list.rbind()
+  mean_intercept=sapply(1:2, function(f) tapply(all_intercept[,f], a$model_type, mean)) %>%
+    matrix(., ncol=2)
+  colnames(mean_intercept)=c("intercept_cell_1", "intercept_cell_2")
+  nt=names(table(a$model_type))
+  rownames(mean_intercept)= nt
 
   return(list(ensemble_summary= sum2,
               ensemble_summary_by_type=sum1,
               ensemble_weight=ensemble_weight,
+              ensemble_intecept=mean_intercept,
               CTS_weight=CTS_weight,
               NS_weight=NS_weight,
               all_summary=a,
-              all_weights=ww))
+              all_weights=wo))
 
 }

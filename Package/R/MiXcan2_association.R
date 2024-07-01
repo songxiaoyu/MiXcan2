@@ -4,19 +4,18 @@
 #' level. Association analysis returns p-value at tissue level for inference purpose, and
 #' at cell-type level for post-inference (ad hoc) explaination of the likely source of
 #' association.
-#' @param new_y: A N by 2 matrix indicating the predicted gene expression levels in two
+#' @param new_y A N by 2 matrix indicating the predicted gene expression levels in two
 #' cell types. If a non-specific model is used for prediction, the predicted values should be the same in two cell types.
-#' @param new_cov: A N by P matrix for the covariates in association analysis.
-#' @param new_outcome: The dependent variable of the association analysis. It can be continuous, categorical
+#' @param new_cov A N by P matrix for the covariates in association analysis.
+#' @param new_outcome The dependent variable of the association analysis. It can be continuous, categorical
 #' and count variables, and modeled through generalized linear models (GLM).
-#' @param family: Same as the family object used in GLM.
+#' @param family Same as the family object used in GLM.
 #'
 #' @return A tibble showing the estimate, standard error, p value for cell 1 and 2
 #' and the combined p-value using the Cauchy combination.
 #' @export
 #'
-MiXcan2_association <- function(new_y, new_cov,
-                               new_outcome, family= gaussian){
+MiXcan2_association <- function(new_y, new_cov, new_outcome, family= gaussian){
   dat <- data.frame(new_y, new_cov,  y = new_outcome)
   ft <- glm(as.formula(paste0("y ~.")), data = dat, family = family)
   res <- broom::tidy(ft)

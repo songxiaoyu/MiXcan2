@@ -55,13 +55,10 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
   est.tissue=c(ft0$a0,as.numeric(ft0$beta))
 
   # cell type specific model
-
-  ft11=glmnet::cv.glmnet(x=xx, y=y,
-                         penalty.factor=c(0, rep(1, ncol(xx)-1)),
+  ft11=glmnet::cv.glmnet(x=xx, y=y,penalty.factor=c(0, rep(1, ncol(xx)-1)),
                          family="gaussian", foldid=foldid, alpha=0.5)
   ft=glmnet::glmnet(x=xx, y=y, penalty.factor=c(0, rep(1, ncol(xx)-1)),
-                    family="gaussian",
-                    lambda = ft11$lambda.1se, alpha=0.5)
+                    family="gaussian", lambda = ft11$lambda.1se, alpha=0.5)
   est=c(ft$a0,as.numeric(ft$beta))
   beta10=est[1]+est[2]/2
   beta20=est[1]-est[2]/2
@@ -129,9 +126,9 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
       y_tilde=y-cov %*%beta_cov
     } else {y_tilde=y}
 
-    in.sample=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
+    in.sample=metrics(y_hat=y_hat, y_tilde=y_tilde)
 
-  } else {in.sample=rep(0, 4)}
+  } else {in.sample=rep(0, 2)}
 
 
   # ---- get CV metrics ------
@@ -139,8 +136,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
     y_hat=y_tilde=rep(NA, n)
     for (i in 1:10) {
       temp=glmnet::glmnet(x=as.matrix(xcov[foldid!=i,]), y=y[foldid!=i],
-                          family="gaussian",
-                          lambda = ft00$lambda.1se, alpha=0.5)
+                          family="gaussian", lambda = ft00$lambda.1se, alpha=0.5)
 
       y_hat[foldid==i]=cbind(1, x[foldid==i,]) %*% c(temp$a0, temp$beta[1:p])
 
@@ -149,7 +145,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
         y_tilde[foldid==i]=y[foldid==i]-cov[foldid==i,] %*%beta_cov
       } else {y_tilde[foldid==i]=y[foldid==i]}
     }
-    cv=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
+    cv=metrics(y_hat=y_hat, y_tilde=y_tilde)
 
   }
 
@@ -158,8 +154,7 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
     for (i in 1:10) {
       temp=glmnet::glmnet(x=xx[foldid!=i, ], y=y[foldid!=i],
                           penalty.factor=c(0, rep(1, ncol(xx)-1)),
-                          family="gaussian",
-                          lambda = ft11$lambda.1se, alpha=0.5)
+                          family="gaussian", lambda = ft11$lambda.1se, alpha=0.5)
 
       test=c(temp$a0,as.numeric(temp$beta))
       tbeta10=test[1]+test[2]/2
@@ -180,10 +175,10 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
       } else {y_tilde[foldid==i]=y[foldid==i]}
 
     }
-    cv=metrics(y_hat=y_hat, y_tilde=y_tilde, y=y)
+    cv=metrics(y_hat=y_hat, y_tilde=y_tilde)
   }
 
-  if (Type =="NoPredictor") {cv=rep(0, 4)}
+  if (Type =="NoPredictor") {cv=rep(0, 2)}
 
   return(list(type=Type,
               beta.SNP.cell1=beta.SNP.cell1,
@@ -195,24 +190,23 @@ MiXcan2_model=function(y, x, cov=NULL, pi,
               cv.metrics=cv,
               yName=yName,
               xNameMatrix=xNameMatrix,
-              foldid=foldid,
-              x=x,
-              y=y,
-              cov=cov,
-              pi=pi,
-              intercept=intercept))
+              intercept=intercept
+              #foldid=foldid,
+              #x=x,
+              #y=y,
+              #cov=cov,
+              #pi=pi
+              ))
 
 }
 
 
 metrics=function(y_hat,  # should include intercept
-                 y_tilde, # y-z*gamma
-                 y) {
-  unadj.cor= cor(y_hat, y)
+                 y_tilde # y-z*gamma
+                 ) {
   adj.cor= cor(y_hat, y_tilde)
-  unadj.R2= 1-sum((y-y_hat)^2)/sum((y-mean(y))^2)
   adj.R2= 1-sum((y_tilde-y_hat)^2)/sum((y_tilde-mean(y_tilde))^2)
-  return(c(unadj.cor, adj.cor, unadj.R2, adj.R2))
+  return(c(adj.cor, adj.R2))
 }
 
 

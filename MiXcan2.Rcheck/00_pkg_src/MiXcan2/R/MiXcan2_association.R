@@ -15,8 +15,7 @@
 #' and the combined p-value using the Cauchy combination.
 #' @export
 #'
-MiXcan2_association <- function(new_y, new_cov,
-                               new_outcome, family= gaussian){
+MiXcan2_association <- function(new_y, new_cov, new_outcome, family= gaussian){
   dat <- data.frame(new_y, new_cov,  y = new_outcome)
   ft <- glm(as.formula(paste0("y ~.")), data = dat, family = family)
   res <- broom::tidy(ft)
