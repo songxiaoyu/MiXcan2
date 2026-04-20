@@ -174,32 +174,47 @@ library(rlist)
 nCores=detectCores()-1; registerDoParallel(nCores) # use parallel computing for speed, but leave 1 core out for other activities. 
 ```
 
-Step 2: Estimating cell-type-specific (and nonspecific) GReX prediction 
-weights of a gene using the MiXcan function
-  
-    # X_test
-    # V70 V53 V59 V79 V63 V76 V80 V68 V49 V88
-    # 1 1 0 2 0 1 2 0 2 1
-    # 0 2 2 0 2 2 2 2 1 0
-    # 0 0 2 2 0 2 1 0 2 2
-    # 2 1 2 1 2 0 1 0 2 2
-    # 0 0 1 0 2 1 1 1 2 0
-    # 2 1 2 0 1 2 2 2 1 0
-    
-    # X_rows_test
-    # xNameMatrix position rsid ref eff
-    # chr21_4380166_A_A_b38 4598800 rs2457 G C
-    # chr21_2424043_A_C_b38 4171961 rs5424 A T
-    # chr21_1669969_T_C_b38 4261569 rs9509 C G
-    # chr21_1455554_T_G_b38 2729790 rs7777 C A
-    # chr21_4849901_G_A_b38 2055678 rs9293 C C
-    # chr21_2125566_T_T_b38 3991202 rs6735 C A
+Step 2: Estimating cell-type-specific (and nonspecific) GReX prediction weights of a gene using the MiXcan function
+```
+# X_test
+#      V70 V53 V59 V79 V63 V76 V80 V68 V49 V88
+# [1,]   1   1   0   2   0   1   2   0   2   1
+# [2,]   0   2   2   0   2   2   2   2   1   0
+# [3,]   0   0   2   2   0   2   1   0   2   2
+# [4,]   2   1   2   1   2   0   1   0   2   2
+# [5,]   0   0   1   0   2   1   1   1   2   0
+# [6,]   2   1   2   0   1   2   2   2   1   0
+
+# X_rows_test
+#             xNameMatrix position   rsid ref eff
+# 1 chr21_4380166_A_A_b38  4598800 rs2457   G   C
+# 2 chr21_2424043_A_C_b38  4171961 rs5424   A   T
+# 3 chr21_1669969_T_C_b38  4261569 rs9509   C   G
+# 4 chr21_1455554_T_G_b38  2729790 rs7777   C   A
+# 5 chr21_4849901_G_A_b38  2055678 rs9293   C   C
+# 6 chr21_2125566_T_T_b38  3991202 rs6735   C   A
+
+# Cov_test
+#             age         PC1        PC2
+# [1,] -0.5604757 -0.7104066  2.1988103
+# [2,] -0.2301775  0.2568837  1.3124130
+# [3,]  1.5587083 -0.2466919 -0.2651451
+# [4,]  0.0705084 -0.3475426  0.5431941
+# [5,]  0.1292877 -0.9516186 -0.4143399
+# [6,]  1.7150650 -0.0450277 -0.4762469
+
+# Pi_test
+# [1] 0.2897838 0.6491923 0.2806547 0.3547957 0.2391871 0.7411437
+
+# Y_test (numeric vector of length N)
+# [1]  1.7791027  0.5351380 -0.3719449 -1.0255422 -0.5824017  0.3428884
+```
 
 
 ``` r
 set.seed(123)
 ensbl <- MiXcan2_ensemble(y = Y_test, x = X_test, cov = Cov_test,
-                              pi = Pi_test, xNameMatrix = X_rows_test,  # xName → xNameMatrix
+                              pi = Pi_test, xNameMatrix = X_rows_test,
                               yName = gene_name, B = 3, seed = 123)
 ensbl$ensemble_intecept
 ```
@@ -208,13 +223,11 @@ ensbl$ensemble_intecept
     # NonSpecific   -0.0246929       -0.0246929
     # NoPredictor   -0.0869106       -0.0869106
 
-Step 3: Extracting the weights and model summaries from the MiXcan
-output.
+Step 3: Extracting the weights and model summaries from the MiXcan output.
 
+Raw SNP weights from every individual ensemble model (across all B iterations).
+No averaging applied across B model interations and retaining all weights including 0.
 ``` r
-# Raw SNP weights from every individual ensemble model (across all B iterations).
-# No averaging applied across B model interations and retaining all weights including 0.
-
 all_weights_df <- ensbl$all_weights
 head(all_weights_df)
 
@@ -226,9 +239,9 @@ head(all_weights_df)
     # 1 BRCA1 chr21_1669969_T_C_b38 4261569 rs9509 C G           0           0       NoPredictor
 
 
+Overall averaged model performance metrics (e.g. cross-validated R², number of SNPs)
+Results are summarized across all B models into a single row per gene
 ``` r
-# Overall averaged model performance metrics (e.g. cross-validated R², number of SNPs)
-# Results are summarized across all B models into a single row per gene
 ## ensemble_summary
 ensbl_summary = ensbl$ensemble_summary
 ensbl_summary
@@ -236,9 +249,9 @@ ensbl_summary
     ##Gene n_snp_input n_snp_model in.sample.cor in.sample.R2     cv.cor    cv.R2        CTS        NS        NP
     ##1 BRCA1      10      0.6666667     0.1401488    0.1401488    -0.2263911   -0.2263911   0       0.6666667 0.3333333
 
+Overall averaged model performance metrics (e.g. cross-validated R², number of SNPs)
+Summarized separately for each model type (Cell-Type-Specific, Non-Specific, NoPredictor)
 ``` r
-# Overall averaged model performance metrics (e.g. cross-validated R², number of SNPs)
-# Summarized separately for each model type (Cell-Type-Specific, Non-Specific, NoPredictor)
 ensbl_summary_by_type =ensbl$ensemble_summary_by_type
 ensbl_summary_by_type
 ```
@@ -247,9 +260,9 @@ ensbl_summary_by_type
     ## 1 BRCA1 NoPredictor          10           0         0            0      0    
     ## 2 BRCA1 NonSpecific          10           1         0.210        0.210 -0.340
 
+Model performance metrics from each ensemble model (across B interations). 
+Reults are prior to averaging, one row per model iteration.
 ``` r
-# Model erformance metrics from each ensemble model (across B interations)
-# Reults are prior to averaging, one row per model iteration.
 ensbl_all_summary =ensbl$all_summary 
 ensbl_all_summary
 ```
