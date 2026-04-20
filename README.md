@@ -55,7 +55,7 @@
   error and p-values.
 
 A full description of the method can be found in our
-[PrePrint]([https://www.biorxiv.org/content/10.1101/2022.03.15.484509v1.abstract](https://www.medrxiv.org/content/10.1101/2025.11.25.25341027v1)).
+[PrePrint]([https://www.medrxiv.org/content/10.1101/2025.11.25.25341027v1]).
 
 ``` r
 knitr::opts_chunk$set(echo = TRUE)
