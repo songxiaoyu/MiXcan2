@@ -54,8 +54,7 @@
   cell-type-level association summaries including estimates, standard
   error and p-values.
 
-A full description of the method can be found in our
-[PrePrint]([https://www.medrxiv.org/content/10.1101/2025.11.25.25341027v1]).
+A full description of the method can be found in our [PrePrint](https://www.medrxiv.org/content/10.1101/2025.11.25.25341027v1).
 
 ``` r
 knitr::opts_chunk$set(echo = TRUE)
