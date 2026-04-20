@@ -104,13 +104,39 @@ be pre-excluded to allow model training on the remaining samples.
 
 Create peusdo data for demonstration:
 
-``` r
+```r
+# Pseudo data creation
+gene_names <- "BRCA1"
+
 set.seed(123)
-n=200
-pi=rbeta(n, 2, 3)
-x=matrix(rbinom(n*10, 2, 0.3), ncol=10)
-y=x[,1]*pi+rnorm(n, sd=0.2)
-cov=NULL
+N <- 100  # number of samples
+P <- 10   # number of genetic predictors
+Q <- 3    # number of covariates
+
+# Covariate matrix (e.g. age, principal components)
+Cov_test <- matrix(rnorm(N * Q), nrow = N, ncol = Q)
+colnames(Cov_test) <- c("age", "PC1", "PC2")
+
+# Cell-type fraction estimates (bounded between 0 and 1)
+Pi_test <- runif(N, min = 0.1, max = 0.9)
+
+# Genotype matrix with V-prefixed column names
+X_test <- matrix(sample(0:2, N * P, replace = TRUE), nrow = N, ncol = P)
+colnames(X_test) <- paste0("V", sample(40:100, P))
+
+# SNP annotation matrix
+X_rows_test <- data.frame(
+  varID    = paste0("chr21_", sample(1e6:5e6, P), "_",
+                    sample(c("A","T","C","G"), P, replace = TRUE), "_",
+                    sample(c("A","T","C","G"), P, replace = TRUE), "_b38"),
+  position = sample(1e6:5e6, P),
+  rsid     = paste0("rs", sample(1000:9999, P)),
+  ref      = sample(c("A","T","C","G"), P, replace = TRUE),
+  eff      = sample(c("A","T","C","G"), P, replace = TRUE)
+)
+
+# Expression levels
+Y_test <- rnorm(N, mean = 0, sd = 1)
 ```
 
 ### MiXcan analysis pipeline
