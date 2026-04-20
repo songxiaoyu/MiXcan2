@@ -267,7 +267,7 @@ ensbl_all_summary =ensbl$all_summary
 ensbl_all_summary
 ```
 
-    # yName n_snp_input n_snp_model   model_type   in.sample.cor in.sample.R2   cv.cor     cv.R2
-    # BRCA1   10           0          NoPredictor   0.0000000     0.0000000   0.0000000   0.0000000
-    # BRCA1   10           1          NonSpecific   0.1986117     0.1986117   -0.3679533   -0.3679533
-    # BRCA1   10           1          NonSpecific   0.2218347     0.2218347   -0.3112200 -  0.3112200
+    # yName n_snp_input n_snp_model   model_type   in.sample.cor in.sample.R2   cv.cor         cv.R2
+    # BRCA1   10           0          NoPredictor   0.0000000     0.0000000   0.0000000      0.0000000
+    # BRCA1   10           1          NonSpecific   0.1986117     0.1986117   -0.3679533    -0.3679533
+    # BRCA1   10           1          NonSpecific   0.2218347     0.2218347   -0.3112200    -0.3112200
