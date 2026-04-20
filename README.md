@@ -178,9 +178,9 @@ ensbl <- MiXcan2_ensemble(y = Y_test, x = X_test, cov = Cov_test,
 ensbl$ensemble_intecept
 ```
 
-    # intercept_cell_1 intercept_cell_2
-    # NonSpecific -0.0246929 -0.0246929
-    # NoPredictor -0.0869106 -0.0869106
+    #              intercept_cell_1 intercept_cell_2
+    # NonSpecific   -0.0246929       -0.0246929
+    # NoPredictor   -0.0869106       -0.0869106
 
 Step 3: Extracting the weights and model summaries from the MiXcan
 output.
