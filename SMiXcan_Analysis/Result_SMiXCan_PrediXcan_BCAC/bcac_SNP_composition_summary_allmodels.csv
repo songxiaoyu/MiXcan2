@@ -1,0 +1,6 @@
+model_type,total,indels,palindromic
+all_models,1894,75 (4.0%),245 (12.9%)
+adipose,574,26 (4.5%),70 (12.2%)
+fibroblast,623,24 (3.9%),82 (13.2%)
+epithelial,572,21 (3.7%),75 (13.1%)
+predixcanlike,125,4 (3.2%),18 (14.4%)

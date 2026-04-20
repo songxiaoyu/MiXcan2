@@ -1,0 +1,37 @@
+PLINK v2.00a5.10 64-bit (5 Jan 2024)
+Options in effect:
+  --extract /Users/zhusinan/Downloads/adriana/Filtered_Ref/ENSG00000159164.9_snplist_new.txt
+  --keep /Users/zhusinan/Downloads/adriana/Result3/kgp_eur_unrelated_samples.txt
+  --make-bed
+  --out /Users/zhusinan/Downloads/adriana/Result3/Ref/ENSG00000159164.9_eur_hg38
+  --pfile /Users/zhusinan/Downloads/adriana/plink_snplist_by_gene/chr1_hg38
+  --threads 4
+
+Hostname: 192.168.1.4
+Working directory: /Users/zhusinan/Downloads/adriana/Result3
+Start time: Thu Dec 18 16:52:52 2025
+
+Random number seed: 1766047972
+32768 MiB RAM detected; reserving 16384 MiB for main workspace.
+Using up to 4 compute threads.
+3202 samples (1603 females, 1598 males, 1 ambiguous; 2583 founders) loaded from
+/Users/zhusinan/Downloads/adriana/plink_snplist_by_gene/chr1_hg38.psam.
+5759060 variants loaded from
+/Users/zhusinan/Downloads/adriana/plink_snplist_by_gene/chr1_hg38.pvar.
+2 categorical phenotypes loaded.
+--extract: 30 variants remaining.
+--keep: 503 samples remaining.
+503 samples (263 females, 240 males; 498 founders) remaining after main
+filters.
+30 variants remaining after main filters.
+Writing
+/Users/zhusinan/Downloads/adriana/Result3/Ref/ENSG00000159164.9_eur_hg38.fam
+... done.
+Writing
+/Users/zhusinan/Downloads/adriana/Result3/Ref/ENSG00000159164.9_eur_hg38.bim
+... done.
+Writing
+/Users/zhusinan/Downloads/adriana/Result3/Ref/ENSG00000159164.9_eur_hg38.bed
+... done.
+
+End time: Thu Dec 18 16:52:55 2025
