@@ -90,12 +90,38 @@ Below demonstrates the MiXcan analysis pipeline on a single peusdo gene. In real
 Create peusdo data for demonstration:
 
 ```{r}
+# Pseudo data creation
+gene_name <- "BRCA1"
+
 set.seed(123)
-n=200
-pi=rbeta(n, 2, 3)
-x=matrix(rbinom(n*10, 2, 0.3), ncol=10)
-y=x[,1]*pi+rnorm(n, sd=0.2)
-cov=NULL
+N <- 100  # number of samples
+P <- 10   # number of genetic predictors
+Q <- 3    # number of covariates
+
+# Covariate matrix (e.g. age, principal components)
+Cov_test <- matrix(rnorm(N * Q), nrow = N, ncol = Q)
+colnames(Cov_test) <- c("age", "PC1", "PC2")
+
+# Cell-type fraction estimates (bounded between 0 and 1)
+Pi_test <- runif(N, min = 0.1, max = 0.9)
+
+# Genotype matrix with V-prefixed column names
+X_test <- matrix(sample(0:2, N * P, replace = TRUE), nrow = N, ncol = P)
+colnames(X_test) <- paste0("V", sample(40:100, P))
+
+# SNP annotation matrix
+X_rows_test <- data.frame(
+  varID    = paste0("chr21_", sample(1e6:5e6, P), "_",
+                    sample(c("A","T","C","G"), P, replace = TRUE), "_",
+                    sample(c("A","T","C","G"), P, replace = TRUE), "_b38"),
+  position = sample(1e6:5e6, P),
+  rsid     = paste0("rs", sample(1000:9999, P)),
+  ref      = sample(c("A","T","C","G"), P, replace = TRUE),
+  eff      = sample(c("A","T","C","G"), P, replace = TRUE)
+)
+
+# Expression levels
+Y_test <- rnorm(N, mean = 0, sd = 1)
 ```
 
 ### MiXcan analysis pipeline
@@ -110,45 +136,65 @@ nCores=detectCores()-1; registerDoParallel(nCores) # use parallel computing for 
 Step 2: Estimating cell-type-specific (and nonspecific) GReX prediction weights of a gene using the MiXcan function
 
 ```{r}
-set.seed(111)
-foldid <- sample(1:10, length(y), replace=T)
+# X_test
+#      V70 V53 V59 V79 V63 V76 V80 V68 V49 V88
+# [1,]   1   1   0   2   0   1   2   0   2   1
+# [2,]   0   2   2   0   2   2   2   2   1   0
+# [3,]   0   0   2   2   0   2   1   0   2   2
+# [4,]   2   1   2   1   2   0   1   0   2   2
+# [5,]   0   0   1   0   2   1   1   1   2   0
+# [6,]   2   1   2   0   1   2   2   2   1   0
 
-model <- MiXcan2_model(y=y, x=x, cov = cov,
-                        pi= pi,
-                        foldid = foldid, yName="Gene1",
-                       xNameMatrix = paste0("X", 1:10))
-model$beta.SNP.cell1
-model$beta.SNP.cell2
+# X_rows_test
+#             xNameMatrix position   rsid ref eff
+# 1 chr21_4380166_A_A_b38  4598800 rs2457   G   C
+# 2 chr21_2424043_A_C_b38  4171961 rs5424   A   T
+# 3 chr21_1669969_T_C_b38  4261569 rs9509   C   G
+# 4 chr21_1455554_T_G_b38  2729790 rs7777   C   A
+# 5 chr21_4849901_G_A_b38  2055678 rs9293   C   C
+# 6 chr21_2125566_T_T_b38  3991202 rs6735   C   A
+
+# Cov_test
+#             age         PC1        PC2
+# [1,] -0.5604757 -0.7104066  2.1988103
+# [2,] -0.2301775  0.2568837  1.3124130
+# [3,]  1.5587083 -0.2466919 -0.2651451
+# [4,]  0.0705084 -0.3475426  0.5431941
+# [5,]  0.1292877 -0.9516186 -0.4143399
+# [6,]  1.7150650 -0.0450277 -0.4762469
+
+# Pi_test
+# [1] 0.2897838 0.6491923 0.2806547 0.3547957 0.2391871 0.7411437
+
+# Y_test (numeric vector of length N)
+# [1]  1.7791027  0.5351380 -0.3719449 -1.0255422 -0.5824017  0.3428884
+```
+
+
+```{r}
+set.seed(123)
+ensbl <- MiXcan2_ensemble(y = Y_test, x = X_test, cov = Cov_test,
+                              pi = Pi_test, xNameMatrix = X_rows_test,
+                              yName = gene_name, B = 3, seed = 123)
+ensbl$ensemble_intecept
 ```
 
 Step 3: Extracting the weights and model summaries from the MiXcan output.
-```{r}
-MiXcan_weight_result <- MiXcan2_extract_weight(model = model)
-MiXcan_weight_result
-
-```
+Raw SNP weights from every individual ensemble model (across all B iterations). No averaging applied across B model interations and retaining all weights including 0.
 
 ```{r}
-MiXcan_summary_result <- MiXcan2_extract_summary(x=x, y=y, cov=cov,
-                                                pi=pi, model=model)
-MiXcan_summary_result
+all_weights_df <- ensbl$all_weights
+head(all_weights_df)
 ```
-Note, the MiXcan estimated models are from penalized regression (elastic-net), which shrinks the effect size towards zero. If users are interested to use less penalized weights for the MiXcan selected SNPs, they can employ the following function: 
+Overall averaged model performance metrics (e.g. cross-validated R², number of SNPs) Results are summarized across all B models into a single row per gene
 ```{r}
-MiXcan_refit <- MiXcan2_refit(model = model,
-                                           y=y,
-                                           x=x, cov = cov,
-                                           pi= pi)
-MiXcan_refit$weight
-MiXcan_refit$summary
-```
-One can run MiXcan for multiple times to ensemble models for downstream anlaysis. Here are the codes:
-```{r}
-ensemble=MiXcan2_ensemble(y=y, x=x, cov=cov, pi=pi, 
-                 yName="Gene1", B=10, seed=123) 
-  
-ensemble$summary
-ensemble$ensemble_weight
-ensemble$all_weights
+ensbl_summary_by_type =ensbl$ensemble_summary_by_type
+ensbl_summary_by_type
 ```
 
+Model performance metrics from each ensemble model (across B interations). Reults are prior to averaging, one row per model iteration.
+
+```{r}
+ensbl_all_summary =ensbl$all_summary 
+ensbl_all_summary
+```
