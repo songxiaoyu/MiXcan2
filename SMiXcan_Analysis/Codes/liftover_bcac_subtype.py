@@ -11,7 +11,7 @@ def convert_position(row):
     return result[0][1] if result else None
 
 # Directory containing input files
-input_dir = "/Users/zhusinan/Downloads/adriana"
+input_dir = os.environ.get("MIXCAN_ANALYSIS_DIR", "/Users/zhusinan/Downloads/adriana")
 output_dir = input_dir
 
 input_file = os.path.join(input_dir, "bcac_2020_subtype_zscores_for_s-mixcan.txt")
@@ -37,4 +37,3 @@ df = df.dropna(subset=['POS_hg38'])
 df.to_csv(output_file, index=False, na_rep="")
 
 print(f"✓ Saved {len(df)} lifted positions to {output_file}\n")
-
