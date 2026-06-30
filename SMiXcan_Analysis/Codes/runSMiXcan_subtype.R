@@ -21,12 +21,27 @@ library(SMiXcan)
 # ----------------------------
 # Paths
 # ----------------------------
-setwd('/Users/zhusinan/Downloads/adriana/')
-dir_base   <- 'Result3/Ref'                 # per-gene .bim/.raw files
+analysis_dir <- normalizePath(Sys.getenv("MIXCAN_ANALYSIS_DIR", unset = "/Users/zhusinan/Downloads/adriana"), mustWork = TRUE)
+setwd(analysis_dir)
 dir_output <- "Result3/Result_bcac_subtypes/"
 dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
 
 gwas_path <- "bcac_2020_subtype_zscores_for_s-mixcan_hg38.txt"  # <-- CHANGE to your actual filename/path
+
+get_script_dir <- function() {
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- "--file="
+  path <- sub(file_arg, "", args[startsWith(args, file_arg)])
+  if (length(path) > 0) return(dirname(normalizePath(path[1], mustWork = FALSE)))
+  if (!is.null(sys.frames()[[1]]$ofile)) {
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile, mustWork = FALSE)))
+  }
+  getwd()
+}
+
+repo_data_dir <- normalizePath(file.path(get_script_dir(), "..", "..", "Data"), mustWork = TRUE)
+weight_dir <- repo_data_dir
+dir_base <- file.path(repo_data_dir, "1000Genome_Ref")
 
 # ----------------------------
 # Helpers
@@ -59,6 +74,21 @@ is_indel <- function(ref, alt) nchar(ref) != 1 | nchar(alt) != 1
 is_palindromic <- function(ref, alt) {
   (ref=="A" & alt=="T") | (ref=="T" & alt=="A") |
     (ref=="C" & alt=="G") | (ref=="G" & alt=="C")
+}
+
+run_smixcan_assoc <- function(W1, W2, gwas_results, X_ref, n0 = NULL, n1 = NULL,
+                              family = c("binomial", "gaussian")) {
+  family <- match.arg(family)
+  W <- cbind(as.numeric(W1), as.numeric(W2))
+  res <- SMiXcan_assoc_test_K(
+    W = W,
+    gwas_results = gwas_results,
+    x_g = X_ref,
+    n0 = n0,
+    n1 = n1,
+    family = family
+  )
+  c(res$Z_join[1], res$p_join_vec[1], res$Z_join[2], res$p_join_vec[2], res$p_join)
 }
 
 # ------------------------------------------------------------
@@ -165,10 +195,10 @@ for (sc in subtype_list) gwas_raw[, (sc) := suppressWarnings(as.numeric(get(sc))
 # Model configs: 3 celltypes + predixcanlike
 # ----------------------------
 model_cfg <- list(
-  list(model_type="adipose",       weight_file="subset_weight_mixcan2_adipose.csv"),
-  list(model_type="fibroblast",    weight_file="subset_weight_mixcan2_fibroblast.csv"),
-  list(model_type="epithelial",    weight_file="subset_weight_mixcan2_epithelial.csv"),
-  list(model_type="predixcanlike", weight_file="subset_weight_predixcanlike.csv")
+  list(model_type="adipose",       weight_file=file.path(weight_dir, "subset_weight_mixcan2_adipose.csv")),
+  list(model_type="fibroblast",    weight_file=file.path(weight_dir, "subset_weight_mixcan2_fibroblast.csv")),
+  list(model_type="epithelial",    weight_file=file.path(weight_dir, "subset_weight_mixcan2_epithelial.csv")),
+  list(model_type="predixcanlike", weight_file=file.path(weight_dir, "subset_weight_predixcanlike.csv"))
 )
 
 all_results <- list()
@@ -294,7 +324,7 @@ for (cfg in model_cfg) {
           se_Beta = rep(1, length(Z_sub))   # Z-scores -> se=1
         )
 
-        SMiXcan_result <- SMiXcan_assoc_test(
+        SMiXcan_result <- run_smixcan_assoc(
           W1, W2, gwas_results, X_ref_filtered,
           n0= 91477, n1=106278, family='binomial'
         )

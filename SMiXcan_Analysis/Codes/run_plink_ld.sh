@@ -8,18 +8,22 @@ set -euo pipefail
 #    ln -s hg38_corrected.psam chr${i}_hg38.psam
 #done
 
-ID_DIR="/Users/zhusinan/Downloads/adriana/Filtered_Ref"
-PGEN_DIR="/Users/zhusinan/Downloads/adriana/plink_snplist_by_gene"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DATA_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)/Data"
+
+ANALYSIS_DIR="${MIXCAN_ANALYSIS_DIR:-/Users/zhusinan/Downloads/adriana}"
+ID_DIR="${ANALYSIS_DIR}/Filtered_Ref"
+PGEN_DIR="${ANALYSIS_DIR}/plink_snplist_by_gene"
 
 # Output directory where  live and results will be written 
 # results including Ref Genome: geneID_snplist_hg38_012.raw; 
 #                   SNP info: geneID_snplist_hg38.bim
 # OUT_DIR="/Users/zhusinan/Downloads/adriana/plink_snplist_by_gene"
-OUT_DIR="/Users/zhusinan/Downloads/adriana/Result3/Ref"
+OUT_DIR="${MIXCAN_REF_DIR:-${REPO_DATA_DIR}/1000Genome_Ref}"
 # Threads
 THREADS="4"
 # EUR sample ID path
-EUR_samples="/Users/zhusinan/Downloads/adriana/Result3/kgp_eur_unrelated_samples.txt"
+EUR_samples="${MIXCAN_EUR_SAMPLES:-${REPO_DATA_DIR}/1000Genome_kgp_eur_unrelated_samples_ID.txt}"
 
 #optional (if conda is needed)
 source /opt/anaconda3/etc/profile.d/conda.sh
@@ -77,7 +81,7 @@ if [[ ${#GENES[@]} -ne ${#CHRS[@]} ]]; then
   exit 1
 fi
 
-# mkdir -p "${OUT_DIR}"
+mkdir -p "${OUT_DIR}"
 
 for i in "${!GENES[@]}"; do
   GENE="${GENES[$i]}"
@@ -110,7 +114,7 @@ for i in "${!GENES[@]}"; do
 
   # ---- PLINK1.9: recode A (012) ----
   # (if conda is needed)
-  conda activate plink
+  conda activate plink2
   plink --bfile "${OUT_PREFIX}" \
         --recodeA \
         --threads "${THREADS}" \

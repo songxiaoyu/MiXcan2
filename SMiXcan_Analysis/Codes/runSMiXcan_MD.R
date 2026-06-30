@@ -14,10 +14,25 @@ library(dplyr)
 library(MASS)
 library(SMiXcan)
 
-setwd('/Users/zhusinan/Downloads/adriana')
-dir_base   <- "Result3/Ref"
+analysis_dir <- normalizePath(Sys.getenv("MIXCAN_ANALYSIS_DIR", unset = "/Users/zhusinan/Downloads/adriana"), mustWork = TRUE)
+setwd(analysis_dir)
 dir_output <- "Result3/Result_SMiXcan/"
 dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
+
+get_script_dir <- function() {
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- "--file="
+  path <- sub(file_arg, "", args[startsWith(args, file_arg)])
+  if (length(path) > 0) return(dirname(normalizePath(path[1], mustWork = FALSE)))
+  if (!is.null(sys.frames()[[1]]$ofile)) {
+    return(dirname(normalizePath(sys.frames()[[1]]$ofile, mustWork = FALSE)))
+  }
+  getwd()
+}
+
+repo_data_dir <- normalizePath(file.path(get_script_dir(), "..", "..", "Data"), mustWork = TRUE)
+weight_dir <- repo_data_dir
+dir_base <- file.path(repo_data_dir, "1000Genome_Ref")
 
 # ----------------------------
 # Helpers
@@ -111,6 +126,21 @@ is_palindromic <- function(ref, alt) {
     (ref=="C" & alt=="G") | (ref=="G" & alt=="C")
 }
 
+run_smixcan_assoc <- function(W1, W2, gwas_results, X_ref, n0 = NULL, n1 = NULL,
+                              family = c("binomial", "gaussian")) {
+  family <- match.arg(family)
+  W <- cbind(as.numeric(W1), as.numeric(W2))
+  res <- SMiXcan_assoc_test_K(
+    W = W,
+    gwas_results = gwas_results,
+    x_g = X_ref,
+    n0 = n0,
+    n1 = n1,
+    family = family
+  )
+  c(res$Z_join[1], res$p_join_vec[1], res$Z_join[2], res$p_join_vec[2], res$p_join)
+}
+
 # ----------------------------
 # Main loops
 # ----------------------------
@@ -134,7 +164,7 @@ for (pheno in pheno_list) {
   for (cell in cell_list) {
 
     # Read weights
-    W <- fread(paste0("subset_weight_mixcan2_", cell, ".csv"))
+    W <- fread(file.path(weight_dir, paste0("subset_weight_mixcan2_", cell, ".csv")))
     W[, MarkerName_hg38 := to_plink_id(xNameMatrix)]
     W[, chr_num := tstrsplit(MarkerName_hg38, ":", fixed = TRUE)[[1]]]
 
@@ -259,7 +289,7 @@ for (pheno in pheno_list) {
           se_Beta = rep(1, length(ref_vars))
         )
 
-        SMiXcan_result <- SMiXcan_assoc_test(
+        SMiXcan_result <- run_smixcan_assoc(
           W1, W2, gwas_results, X_ref_filtered,
           n0 = NULL, n1 = NULL, family = "gaussian"
         )
@@ -312,4 +342,3 @@ summary_table <- rbindlist(list(summary_all, summary_by_cell), use.names = TRUE,
 fwrite(summary_table, paste0(dir_output, "SNP_composition_summary.csv"))
 
 print(summary_table)
-
