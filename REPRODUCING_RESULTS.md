@@ -44,31 +44,6 @@ sudo xcode-select --install
 open https://mac.r-project.org/tools/gfortran-14.2-universal.pkg
 ```
 
-### PLINK
-
-The optional reference-regeneration script requires PLINK2. One convenient option is to install it with conda:
-
-```bash
-conda create -n plink2 -c bioconda -c conda-forge plink2
-conda activate plink2
-plink2 --version
-```
-
-Alternatively, download the PLINK2 binary directly and add it to your `PATH`:
-
-- PLINK 2: <https://www.cog-genomics.org/plink/2.0/>
-
-<!--The helper script `SMiXcan_Analysis/Codes/run_plink_ld.sh` assumes `plink2` is available after activating the `plink2` conda environment. If you use a different environment name or install location, update the `conda activate plink2` lines in that script or make sure the executable is already on your `PATH`.-->
-
-### Python Liftover Dependencies
-
-As we need to liftover SNPs between hg19 to hg38, install Python with `pandas` and `pyliftover`:
-
-```bash
-python3 -m pip install pandas pyliftover
-python3 -c "import pandas, pyliftover; print('liftover dependencies OK')"
-```
-
 ## Input Data
 
 ### 1. Model Weight Files
@@ -171,6 +146,13 @@ The corresponding result tables used in the manuscript are included in this repo
 
 Then lift them from hg19 to hg38:
 
+Install Python with `pandas` and `pyliftover` before running the liftover script:
+
+```bash
+python3 -m pip install pandas pyliftover
+python3 -c "import pandas, pyliftover; print('liftover dependencies OK')"
+```
+
 ```bash
 export MIXCAN_ANALYSIS_DIR=/path/to/analysis_dir
 python3 SMiXcan_Analysis/Codes/liftover_md_gwas.py
@@ -201,6 +183,18 @@ Data/MD_results_2021/PMD_MetaResultswInfo_20210609_hg38_repro_subset.txt
 ### Creation of the Input Reference LD
 
 Download reference genome from https://www.cog-genomics.org/plink/2.0/resources . Use 2022-08-04 Byrska-Bishop et al. (build 38, 3202 samples, contigs unphased). Please pick‘Split by chromosome’, ‘info annotations’, ‘King-based pedigree corrections. Save files in `analysis_dir/reference_pgen/`. 
+
+The reference-regeneration script requires PLINK2. One convenient option is to install it with conda:
+
+```bash
+conda create -n plink2 -c bioconda -c conda-forge plink2
+conda activate plink2
+plink2 --version
+```
+
+Alternatively, download the PLINK2 binary directly and add it to your `PATH`:
+
+- PLINK 2: <https://www.cog-genomics.org/plink/2.0/>
 
 Get the snps used in analysis here in `analysis_dir/gene_snplists/`
 
