@@ -14,11 +14,6 @@ library(dplyr)
 library(MASS)
 library(SMiXcan)
 
-analysis_dir <- normalizePath(Sys.getenv("MIXCAN_ANALYSIS_DIR", unset = "/Users/zhusinan/Downloads/adriana"), mustWork = TRUE)
-setwd(analysis_dir)
-dir_output <- "Result3/Result_SMiXcan/"
-dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
-
 get_script_dir <- function() {
   args <- commandArgs(trailingOnly = FALSE)
   file_arg <- "--file="
@@ -30,9 +25,14 @@ get_script_dir <- function() {
   getwd()
 }
 
+analysis_dir <- normalizePath(Sys.getenv("MIXCAN_ANALYSIS_DIR", unset = "/Users/zhusinan/Downloads/adriana"), mustWork = TRUE)
 repo_data_dir <- normalizePath(file.path(get_script_dir(), "..", "..", "Data"), mustWork = TRUE)
 weight_dir <- repo_data_dir
 dir_base <- file.path(repo_data_dir, "1000Genome_Ref")
+
+setwd(analysis_dir)
+dir_output <- "Result/Result_SMiXcan/"
+dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
 
 # ----------------------------
 # Helpers
@@ -136,7 +136,10 @@ run_smixcan_assoc <- function(W1, W2, gwas_results, X_ref, n0 = NULL, n1 = NULL,
     x_g = X_ref,
     n0 = n0,
     n1 = n1,
-    family = family
+    family = family,
+    regularization = "fixed",
+    reg_scale = 0.001,
+    weight_eps = 0
   )
   c(res$Z_join[1], res$p_join_vec[1], res$Z_join[2], res$p_join_vec[2], res$p_join)
 }
@@ -152,7 +155,7 @@ t <- 1L
 
 for (pheno in pheno_list) {
 
-  gwas_path <- paste0("MD_results_2021/", pheno, "_MetaResultswInfo_20210609_hg38.txt")
+  gwas_path <- file.path(repo_data_dir, "MD_results_2021", paste0(pheno, "_MetaResultswInfo_20210609_hg38_repro_subset.txt"))
   gwas_raw  <- fread(gwas_path)
 
   # IMPORTANT: do NOT exclude indels / palindromic

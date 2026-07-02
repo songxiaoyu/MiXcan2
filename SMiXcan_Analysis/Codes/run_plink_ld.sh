@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # --- CONFIG ---
-# INPUT PGEN Directory containing reference genome: chr{CHR}_hg38.{pgen,psam,pvar} , SNP lists: gene_ID_snplist_new.txt
+# INPUT folders:
+#   gene_snplists/: {gene_id}_snplist_new.txt
+#   reference_pgen/: chr{CHR}_hg38.{pgen,psam,pvar}
 # Generate psam file in PGEN folder
 #for i in {1..22} X Y; do
 #    ln -s hg38_corrected.psam chr${i}_hg38.psam
@@ -12,13 +14,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DATA_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)/Data"
 
 ANALYSIS_DIR="${MIXCAN_ANALYSIS_DIR:-/Users/zhusinan/Downloads/adriana}"
-ID_DIR="${ANALYSIS_DIR}/Filtered_Ref"
-PGEN_DIR="${ANALYSIS_DIR}/plink_snplist_by_gene"
+SNPLIST_DIR="${MIXCAN_SNPLIST_DIR:-${ANALYSIS_DIR}/gene_snplists}"
+PGEN_DIR="${MIXCAN_PGEN_DIR:-${ANALYSIS_DIR}/reference_pgen}"
 
-# Output directory where  live and results will be written 
-# results including Ref Genome: geneID_snplist_hg38_012.raw; 
-#                   SNP info: geneID_snplist_hg38.bim
-# OUT_DIR="/Users/zhusinan/Downloads/adriana/plink_snplist_by_gene"
+# Output directory where reference files will be written.
+# Results include Ref Genome: geneID_snplist_hg38_012.raw
+#                 SNP info: geneID_snplist_hg38.bim
+# OUT_DIR="/Users/zhusinan/Downloads/adriana/1000Genome_Ref"
 OUT_DIR="${MIXCAN_REF_DIR:-${REPO_DATA_DIR}/1000Genome_Ref}"
 # Threads
 THREADS="4"
@@ -88,7 +90,7 @@ for i in "${!GENES[@]}"; do
   CHR="${CHRS[$i]}"
   echo "==> ${GENE} (chr${CHR})"
 
-  SNPLIST="${ID_DIR}/${GENE}_snplist_new.txt"
+  SNPLIST="${SNPLIST_DIR}/${GENE}_snplist_new.txt"
   OUT_PREFIX="${OUT_DIR}/${GENE}_eur_hg38"
   PFILE="${PGEN_DIR}/chr${CHR}_hg38"
 
@@ -103,8 +105,7 @@ for i in "${!GENES[@]}"; do
   fi
 
   # ---- PLINK2: extract variants & make BED/BIM/FAM ----
-  # (if conda is needed)
-  conda activate plink2 
+  conda activate plink2
   plink2 --pfile "${PFILE}" \
          --extract "${SNPLIST}" \
          --make-bed \
@@ -112,19 +113,17 @@ for i in "${!GENES[@]}"; do
          --threads "${THREADS}" \
          --out "${OUT_PREFIX}"
 
-  # ---- PLINK1.9: recode A (012) ----
-  # (if conda is needed)
-  conda activate plink2
-  plink --bfile "${OUT_PREFIX}" \
-        --recodeA \
-        --threads "${THREADS}" \
-        --out "${OUT_PREFIX}_012"
+  # ---- PLINK2: export additive genotype counts (.raw) ----
+  plink2 --bfile "${OUT_PREFIX}" \
+         --export A \
+         --threads "${THREADS}" \
+         --out "${OUT_PREFIX}_012"
 
-  # ---- PLINK1.9: LD r^2 matrix (square) ----
- # plink --bfile "${OUT_PREFIX}" \
- #       --r2 square \
- #       --threads "${THREADS}" \
- #       --out "${LD_PREFIX}"
+  # ---- Optional: LD r^2 matrix (square) ----
+ # plink2 --bfile "${OUT_PREFIX}" \
+ #        --r2 square \
+ #        --threads "${THREADS}" \
+ #        --out "${LD_PREFIX}"
 
   # Optional: compress LD matrix
   # gzip -f "${LD_PREFIX}.ld"
