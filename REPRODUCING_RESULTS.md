@@ -153,7 +153,6 @@ The scripts write output files under `analysis_dir/Result/`:
 
 The corresponding result tables used in the manuscript are included in this repository under `SMiXcan_Analysis/Result_*`.
 
-The analysis scripts are in `SMiXcan_Analysis/Codes/`.
 
 ## Optional: Recreate the MD GWAS Subsets
 
