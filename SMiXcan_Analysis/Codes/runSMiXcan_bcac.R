@@ -3,20 +3,9 @@
 # ============================================================
 
 library(data.table)
-library(lme4)
-library(glmnet)
-library(doRNG)
-library(ACAT)
-library(tibble)
-library(tidyr)
-library(dplyr)
-library(MASS)
 library(SMiXcan)
 
 analysis_dir <- normalizePath(Sys.getenv("MIXCAN_ANALYSIS_DIR", unset = "/Users/zhusinan/Downloads/adriana"), mustWork = TRUE)
-setwd(analysis_dir)
-dir_output <- "Result3/Result_bcac/"
-dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
 
 get_script_dir <- function() {
   args <- commandArgs(trailingOnly = FALSE)
@@ -32,6 +21,10 @@ get_script_dir <- function() {
 repo_data_dir <- normalizePath(file.path(get_script_dir(), "..", "..", "Data"), mustWork = TRUE)
 weight_dir <- repo_data_dir
 dir_base <- file.path(repo_data_dir, "1000Genome_Ref")
+
+setwd(analysis_dir)
+dir_output <- "Result/Result_bcac/"
+dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
 
 # ----------------------------
 # Helpers
@@ -58,14 +51,12 @@ comp_allele <- function(a) {
   as.character(map[a])
 }
 
-# Harmonize BCAC GWAS to BIM MarkerName_hg38 (chr:pos:ref:alt) using 4-way mapping.
-# Flips Beta when swapped or comp+swapped.
-harmonize_bcac_to_bim_by_id <- function(gwas_chr, ld_bim,
-                                        chr_col="CHR", pos_col="POS_hg38",
-                                        base_col="Baseline.Meta", eff_col="Effect.Meta",
-                                        beta_col="Beta.meta", se_col="sdE.meta",
-                                        p_col=NULL) {
-
+build_bcac_candidate_table <- function(gwas_chr,
+                                       chr_col = "CHR", pos_col = "POS_hg38",
+                                       base_col = "Baseline.Meta", eff_col = "Effect.Meta",
+                                       beta_col = "Beta.meta", se_col = "sdE.meta",
+                                       p_col = NULL,
+                                       marker_filter = NULL) {
   g <- copy(gwas_chr)
 
   g[, chr_norm := normalize_chr(get(chr_col))]
@@ -74,6 +65,7 @@ harmonize_bcac_to_bim_by_id <- function(gwas_chr, ld_bim,
   g[, A2       := toupper(as.character(get(eff_col)))]
   g[, B        := suppressWarnings(as.numeric(get(beta_col)))]
   g[, SE       := suppressWarnings(as.numeric(get(se_col)))]
+  g[, source_order := .I]
 
   if (!is.null(p_col) && p_col %chin% names(g)) {
     g[, P := suppressWarnings(as.numeric(get(p_col)))]
@@ -81,46 +73,66 @@ harmonize_bcac_to_bim_by_id <- function(gwas_chr, ld_bim,
     g[, P := NA_real_]
   }
 
-  g[, id_same := paste0(chr_norm, ":", pos, ":", A1, ":", A2)]
-  g[, id_swap := paste0(chr_norm, ":", pos, ":", A2, ":", A1)]
+  make_candidate <- function(dt, marker, flip_beta, priority) {
+    out <- dt[!is.na(marker), .(
+      MarkerName_hg38 = marker[!is.na(marker)],
+      B = B[!is.na(marker)],
+      SE = SE[!is.na(marker)],
+      P = P[!is.na(marker)],
+      priority = priority,
+      source_order = source_order[!is.na(marker)]
+    )]
+    if (flip_beta && nrow(out) > 0) out[, B := -B]
+    out
+  }
 
+  id_same <- paste0(g$chr_norm, ":", g$pos, ":", g$A1, ":", g$A2)
+  id_swap <- paste0(g$chr_norm, ":", g$pos, ":", g$A2, ":", g$A1)
+
+  id_comp_same <- rep(NA_character_, nrow(g))
+  id_comp_swap <- rep(NA_character_, nrow(g))
   okc <- is_snp_acgt(g$A1) & is_snp_acgt(g$A2)
-  g[, id_comp_same := NA_character_]
-  g[, id_comp_swap := NA_character_]
   if (any(okc)) {
     c1 <- comp_allele(g$A1[okc])
     c2 <- comp_allele(g$A2[okc])
-    g$id_comp_same[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c1, ":", c2)
-    g$id_comp_swap[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c2, ":", c1)
+    id_comp_same[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c1, ":", c2)
+    id_comp_swap[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c2, ":", c1)
   }
 
-  b <- ld_bim[, .(MarkerName_hg38)]
-  setkey(b, MarkerName_hg38)
-
-  join_one <- function(dt, id_col, flip_beta) {
-    tmp <- dt[!is.na(get(id_col)), .(MarkerName_hg38 = get(id_col), B, SE, P)]
-    if (nrow(tmp) == 0) return(tmp[0])
-    tmp <- b[tmp, on="MarkerName_hg38", nomatch=0L]
-    if (nrow(tmp) == 0) return(tmp)
-    tmp[, B := if (flip_beta) -B else B]
-    tmp
+  if (!is.null(marker_filter)) {
+    keep <- id_same %chin% marker_filter |
+      id_swap %chin% marker_filter |
+      id_comp_same %chin% marker_filter |
+      id_comp_swap %chin% marker_filter
+    if (!any(keep)) return(data.table())
+    g <- g[keep]
+    id_same <- id_same[keep]
+    id_swap <- id_swap[keep]
+    id_comp_same <- id_comp_same[keep]
+    id_comp_swap <- id_comp_swap[keep]
   }
 
   out <- rbindlist(list(
-    join_one(g, "id_same",      flip_beta = FALSE),
-    join_one(g, "id_swap",      flip_beta = TRUE),
-    join_one(g, "id_comp_same", flip_beta = FALSE),
-    join_one(g, "id_comp_swap", flip_beta = TRUE)
+    make_candidate(g, id_same,      flip_beta = FALSE, priority = 1L),
+    make_candidate(g, id_swap,      flip_beta = TRUE,  priority = 2L),
+    make_candidate(g, id_comp_same, flip_beta = FALSE, priority = 3L),
+    make_candidate(g, id_comp_swap, flip_beta = TRUE,  priority = 4L)
   ), use.names = TRUE, fill = TRUE)
 
-  if (nrow(out) == 0) {
-    return(out[, .(MarkerName_hg38, Beta_aligned = B, se_aligned = SE)])
-  }
+  if (nrow(out) == 0) return(out)
 
-  setorder(out, MarkerName_hg38, P)
+  setorder(out, MarkerName_hg38, P, priority, source_order)
   out <- out[, .SD[1], by = MarkerName_hg38]
-
+  setkey(out, MarkerName_hg38)
   out[, .(MarkerName_hg38, Beta_aligned = B, se_aligned = SE)]
+}
+
+harmonize_bcac_to_bim_cached <- function(gwas_candidates, ld_bim) {
+  b <- ld_bim[, .(MarkerName_hg38)]
+  setkey(b, MarkerName_hg38)
+  out <- gwas_candidates[b, on = "MarkerName_hg38", nomatch = 0L]
+  if (nrow(out) == 0) return(out[, .(MarkerName_hg38, Beta_aligned, se_aligned)])
+  out[, .(MarkerName_hg38, Beta_aligned, se_aligned)]
 }
 
 # --- counting helpers ---
@@ -144,7 +156,10 @@ run_smixcan_assoc <- function(W1, W2, gwas_results, X_ref, n0 = NULL, n1 = NULL,
     x_g = X_ref,
     n0 = n0,
     n1 = n1,
-    family = family
+    family = family,
+    regularization = "fixed",
+    reg_scale = 0.001,
+    weight_eps = 0
   )
   c(res$Z_join[1], res$p_join_vec[1], res$Z_join[2], res$p_join_vec[2], res$p_join)
 }
@@ -162,12 +177,79 @@ model_cfg <- list(
 
 result_total <- vector(mode = "list", length = length(model_cfg))
 
+build_target_markers_by_chr <- function(ref_dir) {
+  bim_files <- list.files(ref_dir, pattern = "[.]bim$", full.names = TRUE)
+  targets <- rbindlist(lapply(bim_files, function(path) {
+    x <- fread(path, header = FALSE, select = c(1, 2))
+    setnames(x, c("chr", "MarkerName_hg38"))
+    x[, chr_norm := normalize_chr(chr)]
+    x[, .(chr_norm, MarkerName_hg38)]
+  }), use.names = TRUE)
+  targets <- unique(targets)
+  by_chr <- targets[, .(markers = list(MarkerName_hg38)), by = chr_norm]
+  setNames(by_chr$markers, by_chr$chr_norm)
+}
+
+target_markers_by_chr <- build_target_markers_by_chr(dir_base)
+
 # Read BCAC GWAS (DO NOT filter out indels/palindromic)
-gwas_raw <- fread(file.path(analysis_dir, "plink_snplist_by_gene", "bcac_2020_sumstats_for_s-mixcan_hg38.csv"))
+gwas_path <- file.path(repo_data_dir, "bcac_2020_sumstats_for_s-mixcan_hg38_repro_subset.csv")
+gwas_raw <- fread(gwas_path)
 if ("V1" %chin% names(gwas_raw)) gwas_raw[, V1 := NULL]
 gwas_raw[, chr_norm := normalize_chr(CHR)]
 gwas_raw[, Baseline.Meta := toupper(as.character(Baseline.Meta))]
 gwas_raw[, Effect.Meta   := toupper(as.character(Effect.Meta))]
+
+gwas_candidate_cache <- new.env(parent = emptyenv())
+get_gwas_candidates_for_chr <- function(chr_norm) {
+  cache_key <- as.character(chr_norm)
+  if (!exists(cache_key, envir = gwas_candidate_cache, inherits = FALSE)) {
+    gwas_chr <- gwas_raw[chr_norm == cache_key]
+    marker_filter <- target_markers_by_chr[[cache_key]]
+    if (nrow(gwas_chr) == 0 || length(marker_filter) == 0) {
+      assign(cache_key, data.table(), envir = gwas_candidate_cache)
+    } else {
+      assign(
+        cache_key,
+        build_bcac_candidate_table(
+          gwas_chr = gwas_chr,
+          chr_col  = "CHR",
+          pos_col  = "POS_hg38",
+          base_col = "Baseline.Meta",
+          eff_col  = "Effect.Meta",
+          beta_col = "Beta.meta",
+          se_col   = "sdE.meta",
+          p_col    = NULL,
+          marker_filter = marker_filter
+        ),
+        envir = gwas_candidate_cache
+      )
+    }
+  }
+  get(cache_key, envir = gwas_candidate_cache, inherits = FALSE)
+}
+
+ref_data_cache <- new.env(parent = emptyenv())
+get_ref_data_for_gene <- function(gene) {
+  if (!exists(gene, envir = ref_data_cache, inherits = FALSE)) {
+    bim_path <- file.path(dir_base, sprintf("%s_eur_hg38.bim", gene))
+    raw_path <- file.path(dir_base, sprintf("%s_eur_hg38_012.raw", gene))
+    if (!file.exists(bim_path) || !file.exists(raw_path)) {
+      assign(gene, NULL, envir = ref_data_cache)
+    } else {
+      ld_bim <- fread(bim_path, header = FALSE)
+      setnames(ld_bim, c('chr', 'MarkerName_hg38', 'mor', 'POS_hg38', 'A1_bim', 'A2_bim'))
+      ld_bim[, chr_norm := normalize_chr(chr)]
+
+      X_ref <- fread(raw_path, sep = " ")
+      X_ref <- X_ref[, 7:ncol(X_ref)]
+      setnames(X_ref, ld_bim$MarkerName_hg38)
+
+      assign(gene, list(ld_bim = ld_bim, X_ref = X_ref), envir = ref_data_cache)
+    }
+  }
+  get(gene, envir = ref_data_cache, inherits = FALSE)
+}
 
 t <- 1L
 for (cfg in model_cfg) {
@@ -209,44 +291,29 @@ for (cfg in model_cfg) {
     result[g, type := as.character(unique(W_s$type))[1]]
     result[g, MiXcan_snp_num := nrow(W_s)]
 
-    bim_path <- file.path(dir_base, sprintf("%s_eur_hg38.bim", gene))
-    raw_path <- file.path(dir_base, sprintf("%s_eur_hg38_012.raw", gene))
-    if (!file.exists(bim_path) || !file.exists(raw_path)) {
+    ref_data <- get_ref_data_for_gene(gene)
+    if (is.null(ref_data)) {
       warning(sprintf("Missing BIM/RAW for gene %s. Skip.", gene))
       next
     }
 
     tryCatch({
 
-      # BIM
-      ld_bim <- fread(bim_path, header = FALSE)
-      setnames(ld_bim, c('chr', 'MarkerName_hg38', 'mor', 'POS_hg38', 'A1_bim', 'A2_bim'))
-      ld_bim[, chr_norm := normalize_chr(chr)]
+      ld_bim <- ref_data$ld_bim
+      X_ref <- ref_data$X_ref
       target_chr <- ld_bim$chr_norm[1]
 
-      # RAW genotypes
-      X_ref <- fread(raw_path, sep = " ")
-      X_ref <- X_ref[, 7:ncol(X_ref)]
-      setnames(X_ref, ld_bim$MarkerName_hg38)
-
-      # GWAS restricted to chr
-      gwas_chr <- gwas_raw[chr_norm == target_chr]
-      if (nrow(gwas_chr) == 0) {
+      # GWAS candidates are built once per chromosome and reused across genes/models.
+      gwas_candidates <- get_gwas_candidates_for_chr(target_chr)
+      if (nrow(gwas_candidates) == 0) {
         warning(sprintf("No BCAC GWAS records on chr %s for gene %s.", target_chr, gene))
         next
       }
 
       # Harmonize GWAS -> BIM
-      gwas_aligned <- harmonize_bcac_to_bim_by_id(
-        gwas_chr = gwas_chr,
-        ld_bim   = ld_bim,
-        chr_col  = "CHR",
-        pos_col  = "POS_hg38",
-        base_col = "Baseline.Meta",
-        eff_col  = "Effect.Meta",
-        beta_col = "Beta.meta",
-        se_col   = "sdE.meta",
-        p_col    = NULL
+      gwas_aligned <- harmonize_bcac_to_bim_cached(
+        gwas_candidates = gwas_candidates,
+        ld_bim = ld_bim
       )
 
       if (nrow(gwas_aligned) == 0) {
@@ -306,7 +373,13 @@ for (cfg in model_cfg) {
         n0 = 91477, n1 = 106278, family = 'binomial'
       )
 
-      result[g, c('Z_1_join','p_1_join','Z_2_join','p_2_join','p_join')] <- SMiXcan_result
+      result[g, `:=`(
+        Z_1_join = SMiXcan_result[[1]],
+        p_1_join = SMiXcan_result[[2]],
+        Z_2_join = SMiXcan_result[[3]],
+        p_2_join = SMiXcan_result[[4]],
+        p_join   = SMiXcan_result[[5]]
+      )]
 
     }, error = function(e) {
       warning(sprintf("Gene %s failed: %s", gene, e$message))

@@ -22,11 +22,6 @@ library(SMiXcan)
 # Paths
 # ----------------------------
 analysis_dir <- normalizePath(Sys.getenv("MIXCAN_ANALYSIS_DIR", unset = "/Users/zhusinan/Downloads/adriana"), mustWork = TRUE)
-setwd(analysis_dir)
-dir_output <- "Result3/Result_bcac_subtypes/"
-dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
-
-gwas_path <- "bcac_2020_subtype_zscores_for_s-mixcan_hg38.txt"  # <-- CHANGE to your actual filename/path
 
 get_script_dir <- function() {
   args <- commandArgs(trailingOnly = FALSE)
@@ -42,6 +37,11 @@ get_script_dir <- function() {
 repo_data_dir <- normalizePath(file.path(get_script_dir(), "..", "..", "Data"), mustWork = TRUE)
 weight_dir <- repo_data_dir
 dir_base <- file.path(repo_data_dir, "1000Genome_Ref")
+gwas_path <- file.path(repo_data_dir, "bcac_2020_subtype_zscores_for_s-mixcan_hg38_repro_subset.txt")
+
+setwd(analysis_dir)
+dir_output <- "Result/Result_bcac_subtypes/"
+dir.create(dir_output, showWarnings = FALSE, recursive = TRUE)
 
 # ----------------------------
 # Helpers
@@ -86,88 +86,97 @@ run_smixcan_assoc <- function(W1, W2, gwas_results, X_ref, n0 = NULL, n1 = NULL,
     x_g = X_ref,
     n0 = n0,
     n1 = n1,
-    family = family
+    family = family,
+    regularization = "fixed",
+    reg_scale = 0.001,
+    weight_eps = 0
   )
   c(res$Z_join[1], res$p_join_vec[1], res$Z_join[2], res$p_join_vec[2], res$p_join)
 }
 
-# ------------------------------------------------------------
-# Harmonize subtype GWAS -> BIM MarkerName_hg38 (chr:pos:ref:alt)
-# using 4-way matching and flip Z where needed.
-#
-# Returns:
-#   data.table with columns: MarkerName_hg38 + subtype_cols (aligned Z per subtype)
-# ------------------------------------------------------------
-harmonize_subtypeZ_to_bim_by_id <- function(gwas_chr, ld_bim,
-                                            subtype_cols,
-                                            chr_col="CHR", pos_col="POS_hg38",
-                                            base_col="Baseline.Meta", eff_col="Effect.Meta") {
+build_subtype_candidate_table <- function(gwas_chr, subtype_cols,
+                                          chr_col = "CHR", pos_col = "POS_hg38",
+                                          base_col = "Baseline.Meta", eff_col = "Effect.Meta",
+                                          marker_filter = NULL) {
   g <- copy(gwas_chr)
 
   g[, chr_norm := normalize_chr(get(chr_col))]
   g[, pos      := as.character(get(pos_col))]
   g[, A1       := toupper(as.character(get(base_col)))]
   g[, A2       := toupper(as.character(get(eff_col)))]
+  g[, source_order := .I]
 
-  # ensure subtype columns numeric
-  for (sc in subtype_cols) {
-    if (sc %chin% names(g)) g[, (sc) := suppressWarnings(as.numeric(get(sc)))]
+  make_candidate <- function(dt, marker, flip, priority) {
+    out <- dt[!is.na(marker), c(
+      list(
+        MarkerName_hg38 = marker[!is.na(marker)],
+        priority = priority,
+        source_order = source_order[!is.na(marker)]
+      ),
+      mget(subtype_cols)
+    )]
+    if (flip && nrow(out) > 0) {
+      for (sc in subtype_cols) out[, (sc) := -get(sc)]
+    }
+    out
   }
 
-  # candidate IDs
-  g[, id_same := paste0(chr_norm, ":", pos, ":", A1, ":", A2)]
-  g[, id_swap := paste0(chr_norm, ":", pos, ":", A2, ":", A1)]
+  id_same <- paste0(g$chr_norm, ":", g$pos, ":", g$A1, ":", g$A2)
+  id_swap <- paste0(g$chr_norm, ":", g$pos, ":", g$A2, ":", g$A1)
 
+  id_comp_same <- rep(NA_character_, nrow(g))
+  id_comp_swap <- rep(NA_character_, nrow(g))
   okc <- is_snp_acgt(g$A1) & is_snp_acgt(g$A2)
-  g[, id_comp_same := NA_character_]
-  g[, id_comp_swap := NA_character_]
   if (any(okc)) {
     c1 <- comp_allele(g$A1[okc])
     c2 <- comp_allele(g$A2[okc])
-    g$id_comp_same[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c1, ":", c2)
-    g$id_comp_swap[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c2, ":", c1)
+    id_comp_same[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c1, ":", c2)
+    id_comp_swap[okc] <- paste0(g$chr_norm[okc], ":", g$pos[okc], ":", c2, ":", c1)
   }
 
-  # BIM key
-  b <- ld_bim[, .(MarkerName_hg38)]
-  setkey(b, MarkerName_hg38)
-
-  # IMPORTANT FIX: safe data.table selection with new column + subtype columns
-  join_one <- function(dt, id_col, flip) {
-    tmp <- dt[!is.na(get(id_col)), c(list(MarkerName_hg38 = get(id_col)), mget(subtype_cols))]
-    if (nrow(tmp) == 0) return(tmp[0])
-    tmp <- b[tmp, on="MarkerName_hg38", nomatch=0L]
-    if (nrow(tmp) == 0) return(tmp)
-    if (flip) {
-      for (sc in subtype_cols) tmp[, (sc) := -get(sc)]
-    }
-    tmp
+  if (!is.null(marker_filter)) {
+    keep <- id_same %chin% marker_filter |
+      id_swap %chin% marker_filter |
+      id_comp_same %chin% marker_filter |
+      id_comp_swap %chin% marker_filter
+    if (!any(keep)) return(data.table())
+    g <- g[keep]
+    id_same <- id_same[keep]
+    id_swap <- id_swap[keep]
+    id_comp_same <- id_comp_same[keep]
+    id_comp_swap <- id_comp_swap[keep]
   }
 
   out <- rbindlist(list(
-    join_one(g, "id_same",      flip = FALSE),
-    join_one(g, "id_swap",      flip = TRUE),
-    join_one(g, "id_comp_same", flip = FALSE),
-    join_one(g, "id_comp_swap", flip = TRUE)
+    make_candidate(g, id_same,      flip = FALSE, priority = 1L),
+    make_candidate(g, id_swap,      flip = TRUE,  priority = 2L),
+    make_candidate(g, id_comp_same, flip = FALSE, priority = 3L),
+    make_candidate(g, id_comp_swap, flip = TRUE,  priority = 4L)
   ), use.names = TRUE, fill = TRUE)
 
   if (nrow(out) == 0) return(out)
 
-  # Deduplicate per MarkerName_hg38:
-  # Keep first non-NA across concatenated rows (same > swap > comp_same > comp_swap)
-  setkey(out, MarkerName_hg38)
+  setorder(out, MarkerName_hg38, priority, source_order)
   out <- out[, lapply(.SD, function(x) {
     i <- which(!is.na(x))[1]
     if (length(i) == 0) NA_real_ else x[i]
   }), by = MarkerName_hg38, .SDcols = subtype_cols]
-
+  setkey(out, MarkerName_hg38)
   out
+}
+
+harmonize_subtypeZ_to_bim_cached <- function(gwas_candidates, ld_bim, subtype_cols) {
+  b <- ld_bim[, .(MarkerName_hg38)]
+  setkey(b, MarkerName_hg38)
+  out <- gwas_candidates[b, on = "MarkerName_hg38", nomatch = 0L]
+  if (nrow(out) == 0) return(out[, c("MarkerName_hg38", subtype_cols), with = FALSE])
+  out[, c("MarkerName_hg38", subtype_cols), with = FALSE]
 }
 
 # ----------------------------
 # Load subtype GWAS
 # ----------------------------
-gwas_raw <- fread(gwas_path, sep = "\t")
+gwas_raw <- fread(gwas_path)
 
 subtype_list <- c("Luminal_A", "Luminal_B", "Luminal_B_HER2Neg", "HER2_Enriched", "Triple_Neg")
 missing_sub <- setdiff(subtype_list, names(gwas_raw))
@@ -185,11 +194,60 @@ stopifnot(length(tmp) >= 4)
 # Use allele1/allele2 from var_name
 gwas_raw[, Baseline.Meta := toupper(tmp[[3]])]
 gwas_raw[, Effect.Meta   := toupper(tmp[[4]])]
+if (!"CHR" %chin% names(gwas_raw)) {
+  if ("chr" %chin% names(gwas_raw)) {
+    gwas_raw[, CHR := chr]
+  } else {
+    gwas_raw[, CHR := tmp[[1]]]
+  }
+}
 
 # Keep chr_norm for fast per-chr subset
 gwas_raw[, chr_norm := normalize_chr(CHR)]
 
 for (sc in subtype_list) gwas_raw[, (sc) := suppressWarnings(as.numeric(get(sc)))]
+
+build_target_markers_by_chr <- function(ref_dir) {
+  bim_files <- list.files(ref_dir, pattern = "[.]bim$", full.names = TRUE)
+  targets <- rbindlist(lapply(bim_files, function(path) {
+    x <- fread(path, header = FALSE, select = c(1, 2))
+    setnames(x, c("chr", "MarkerName_hg38"))
+    x[, chr_norm := normalize_chr(chr)]
+    x[, .(chr_norm, MarkerName_hg38)]
+  }), use.names = TRUE)
+  targets <- unique(targets)
+  by_chr <- targets[, .(markers = list(MarkerName_hg38)), by = chr_norm]
+  setNames(by_chr$markers, by_chr$chr_norm)
+}
+
+target_markers_by_chr <- build_target_markers_by_chr(dir_base)
+
+gwas_candidate_cache <- new.env(parent = emptyenv())
+get_gwas_candidates_for_chr <- function(chr_norm) {
+  cache_key <- as.character(chr_norm)
+  if (!exists(cache_key, envir = gwas_candidate_cache, inherits = FALSE)) {
+    gwas_chr <- gwas_raw[chr_norm == cache_key]
+    marker_filter <- target_markers_by_chr[[cache_key]]
+    if (nrow(gwas_chr) == 0 || length(marker_filter) == 0) {
+      assign(cache_key, data.table(), envir = gwas_candidate_cache)
+    } else {
+      assign(
+        cache_key,
+        build_subtype_candidate_table(
+          gwas_chr = gwas_chr,
+          subtype_cols = subtype_list,
+          chr_col = "CHR",
+          pos_col = "POS_hg38",
+          base_col = "Baseline.Meta",
+          eff_col = "Effect.Meta",
+          marker_filter = marker_filter
+        ),
+        envir = gwas_candidate_cache
+      )
+    }
+  }
+  get(cache_key, envir = gwas_candidate_cache, inherits = FALSE)
+}
 
 # ----------------------------
 # Model configs: 3 celltypes + predixcanlike
@@ -200,6 +258,28 @@ model_cfg <- list(
   list(model_type="epithelial",    weight_file=file.path(weight_dir, "subset_weight_mixcan2_epithelial.csv")),
   list(model_type="predixcanlike", weight_file=file.path(weight_dir, "subset_weight_predixcanlike.csv"))
 )
+
+ref_data_cache <- new.env(parent = emptyenv())
+get_ref_data_for_gene <- function(gene) {
+  if (!exists(gene, envir = ref_data_cache, inherits = FALSE)) {
+    bim_path <- file.path(dir_base, sprintf("%s_eur_hg38.bim", gene))
+    raw_path <- file.path(dir_base, sprintf("%s_eur_hg38_012.raw", gene))
+    if (!file.exists(bim_path) || !file.exists(raw_path)) {
+      assign(gene, NULL, envir = ref_data_cache)
+    } else {
+      ld_bim <- fread(bim_path, header = FALSE)
+      setnames(ld_bim, c('chr', 'MarkerName_hg38', 'mor', 'POS_hg38', 'A1_bim', 'A2_bim'))
+      ld_bim[, chr_norm := normalize_chr(chr)]
+
+      X_ref <- fread(raw_path, sep = " ")
+      X_ref <- X_ref[, 7:ncol(X_ref)]
+      setnames(X_ref, ld_bim$MarkerName_hg38)
+
+      assign(gene, list(ld_bim = ld_bim, X_ref = X_ref), envir = ref_data_cache)
+    }
+  }
+  get(gene, envir = ref_data_cache, inherits = FALSE)
+}
 
 all_results <- list()
 k <- 1L
@@ -232,42 +312,30 @@ for (cfg in model_cfg) {
 
     cat(sprintf("Processing gene: %s | model=%s\n", gene, model_type))
 
-    bim_path <- file.path(dir_base, sprintf("%s_eur_hg38.bim", gene))
-    raw_path <- file.path(dir_base, sprintf("%s_eur_hg38_012.raw", gene))
-    if (!file.exists(bim_path) || !file.exists(raw_path)) {
+    ref_data <- get_ref_data_for_gene(gene)
+    if (is.null(ref_data)) {
       warning(sprintf("Missing BIM/RAW for gene %s. Skip.", gene))
       next
     }
 
     tryCatch({
 
-      # BIM
-      ld_bim <- fread(bim_path, header = FALSE)
-      setnames(ld_bim, c('chr', 'MarkerName_hg38', 'mor', 'POS_hg38', 'A1_bim', 'A2_bim'))
-      ld_bim[, chr_norm := normalize_chr(chr)]
+      ld_bim <- ref_data$ld_bim
+      X_ref <- ref_data$X_ref
       target_chr <- ld_bim$chr_norm[1]
 
-      # RAW genotypes
-      X_ref <- fread(raw_path, sep = " ")
-      X_ref <- X_ref[, 7:ncol(X_ref)]
-      setnames(X_ref, ld_bim$MarkerName_hg38)
-
-      # GWAS restricted to chr
-      gwas_chr <- gwas_raw[chr_norm == target_chr]
-      if (nrow(gwas_chr) == 0) {
+      # GWAS candidates are precomputed once per chromosome and reused across genes/models.
+      gwas_candidates <- get_gwas_candidates_for_chr(target_chr)
+      if (nrow(gwas_candidates) == 0) {
         warning(sprintf("No subtype GWAS records on chr %s for gene %s.", target_chr, gene))
         next
       }
 
       # Harmonize subtype Z columns to BIM MarkerName_hg38
-      gwas_aligned <- harmonize_subtypeZ_to_bim_by_id(
-        gwas_chr = gwas_chr,
-        ld_bim   = ld_bim,
-        subtype_cols = subtype_list,
-        chr_col  = "chr",
-        pos_col  = "POS_hg38",
-        base_col = "Baseline.Meta",
-        eff_col  = "Effect.Meta"
+      gwas_aligned <- harmonize_subtypeZ_to_bim_cached(
+        gwas_candidates = gwas_candidates,
+        ld_bim = ld_bim,
+        subtype_cols = subtype_list
       )
 
       if (nrow(gwas_aligned) == 0) {
