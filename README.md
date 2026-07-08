@@ -92,17 +92,24 @@ install.packages("devtools")
 devtools::install_github("songxiaoyu/MiXcan2/Package")
 ```
 
+### Running the ensemble model on your own data
+
+A script to run the ensemble version of MiXcan2 can be found at
+[`scripts/run_ensemble.R`](scripts/run_ensemble.R), which was implemented across 
+Fibroblast, Adipose, and Epithelial cell types to build MiXcan2 models trained 
+using GTEx v8 mammary tissue samples from female subjects with European ancestry.
+
 The typical install time of the package is less than 5 minutes.
 
 ## Example of use
 
-Below demonstrates the MiXcan analysis pipeline on a single peusdo gene.
-In reality, multiple genes can be analyzed in parallel. Holdout set can
-be pre-excluded to allow model training on the remaining samples.
+Since the input data used in our study is not publicly available, the
+example below uses simulated pseudo data to demonstrate the MiXcan
+analysis pipeline on a single gene. In reality, multiple genes can be
+analyzed in parallel, and a holdout set can be pre-excluded to allow
+model training on the remaining samples.
 
 ### Data
-
-Create peusdo data for demonstration:
 
 ``` r
 # Pseudo data creation
