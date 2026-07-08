@@ -1,6 +1,10 @@
 ## =============================================================================
+## OVERVIEW
 ## Run MiXcan2 ensemble models across a list of genes
-##
+## The output files of this script can be found here: https://zenodo.org/records/19075631
+## This link contains the MiXcan2 models trained using GTEx v8 mammary tissue samples 
+## from female subjects with European ancestry
+
 ## For each gene, fits an ensemble of MiXcan2 models (bootstrap-aggregated) to
 ## estimate cell-type-specific vs. non-specific gene expression models, using
 ## per-gene genotype/expression data plus BayesDeBulk cell-type proportion
