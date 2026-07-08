@@ -8,6 +8,7 @@
 ## detected using cell-type-specific (CTS) or non-specific (NS) models.
 ##
 ## Input: one CSV per (model, phenotype) combination, each containing at least
+##   file path: MiXcan2/Data/figure_1
 ##   the columns:
 ##     CHR        - chromosome number
 ##     BP         - base-pair position (used to order variants within a chromosome)
@@ -18,7 +19,7 @@
 ##                  where the dashed significance-threshold line is drawn
 ##     CTS        - flag (>= 0.5) marking a cell-type-specific association
 ##     NS         - flag (>= 0.5) marking a non-specific (non-cell-type-specific) association
-##
+##   
 ## Output: a single combined PNG figure.
 ## =============================================================================
 
