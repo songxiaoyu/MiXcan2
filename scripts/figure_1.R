@@ -333,4 +333,3 @@ final_grid <- ggdraw(final_grid) +
 ## ---------------------------------------------------------------------------
 
 ggsave(output_png, final_grid, width = 26, height = 18, dpi = 600)
-=
