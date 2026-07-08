@@ -33,10 +33,9 @@ library(tidyr)
 ## 0) Config -- EDIT THESE for your local setup
 ## ---------------------------------------------------------------------------
 
-data_dir   <- "data"                                  # folder holding input CSVs
-output_png <- "figure_1.png"
+data_dir   <- "Data/figure_1"                                  # folder holding input CSVs
+output_png <- "Data/figure_1/figure_1.png"
 
-# path_map[[model]][[phenotype]] = "path/to/file.csv"
 path_map <- list(
   "PrediXcan" = list(
     "DA"  = file.path(data_dir, "predixcan_DA.csv"),
