@@ -18,6 +18,7 @@
 ## Output:
 ##   - One association result CSV per gene, per group
 ##   - One combined CSV of association results across all genes, per group
+## The link to the genome-wide associaiton analysis results can be found here: https://zenodo.org/uploads/21268781
 ## =============================================================================
 
 library(MiXcan2)
