@@ -92,14 +92,31 @@ install.packages("devtools")
 devtools::install_github("songxiaoyu/MiXcan2/Package")
 ```
 
-### Running the ensemble model on your own data
-
-A script to run the ensemble version of MiXcan2 can be found at
-[`scripts/run_ensemble.R`](scripts/run_ensemble.R), which was implemented across 
-Fibroblast, Adipose, and Epithelial cell types to build MiXcan2 models trained 
-using GTEx v8 mammary tissue samples from female subjects with European ancestry.
-
 The typical install time of the package is less than 5 minutes.
+
+### Running the pipeline on your own data
+
+The full pipeline used in this study has two stages: (1) training the
+MiXcan2 ensemble prediction models, and (2) running the TWAS (prediction
++ association) using those trained models. Scripts for both stages are
+included in the `scripts/` folder.
+
+**1. Train the ensemble models.** Once you have access to the GTEx and
+GWAS data used to train the models (see the preprint for a full
+description of the training data and study population), run
+[`scripts/run_ensemble.R`](scripts/run_ensemble.R) to build MiXcan2
+models trained using GTEx v8 mammary tissue samples from female subjects
+with European ancestry.
+
+**2. Run the TWAS.** With trained models in hand, the TWAS itself is run
+in two steps, also in `scripts/`:
+
+- Step 1 (prediction): [`scripts/predict_expression.R`](scripts/predict_expression.R)
+  applies the trained MiXcan2 weights to genotype data to predict
+  cell-type-level gene expression (GReX) for each sample.
+- Step 2 (association): [`scripts/association_analysis.R`](scripts/association_analysis.R)
+  tests the predicted expression from Step 1 for association with the
+  phenotype(s) of interest.
 
 ## Example of use
 
