@@ -20,7 +20,7 @@
 ##     CTS        - flag (>= 0.5) marking a cell-type-specific association
 ##     NS         - flag (>= 0.5) marking a non-specific (non-cell-type-specific) association
 ##   
-## Output: a single combined PNG figure.
+## Output: a single combined PNG figure (MiXcan2/Data/figure_1/fig_1.png)
 ## =============================================================================
 
 library(dplyr)
