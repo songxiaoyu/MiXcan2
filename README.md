@@ -94,7 +94,7 @@ devtools::install_github("songxiaoyu/MiXcan2/Package")
 
 The typical install time of the package is less than 5 minutes.
 
-### Running the pipeline on your own data
+## Running the pipeline on your own data
 
 The full pipeline used in this study has two stages: (1) training the
 MiXcan2 ensemble prediction models, and (2) running the TWAS (prediction
