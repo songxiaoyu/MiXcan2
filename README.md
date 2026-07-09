@@ -104,7 +104,7 @@ included in the `scripts/` folder.
 **1. Train the ensemble models.** Once you have access to the GTEx and
 GWAS data used to train the models (see the preprint for a full
 description of the training data and study population), run
-[`scripts/run_ensemble.R`](scripts/run_ensemble.R) to build MiXcan2
+[`scripts/run_ensemble.R`](scripts/run_ensemble_mixcan2.R) to build MiXcan2
 models trained using GTEx v8 mammary tissue samples from female subjects
 with European ancestry.
 
