@@ -8,7 +8,6 @@ Description: The goal of MiXcan2 is to construct cell-type-level gene expression
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.2
 Imports: 
     doParallel,
     tidyverse,
@@ -17,6 +16,10 @@ Imports:
     broom,
     rlist,
     dplyr,
-    foreach,
+    foreach
 Remotes: 
     github::yaowuliu/ACAT
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

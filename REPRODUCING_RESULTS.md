@@ -1,13 +1,40 @@
-# Reproducing S-MiXcan Results
+# Workflow for Reproducing the Published Results
 
-This document describes how to reproduce:
+## 1. Reproducing MiXcan2 (Discovery) Results 
 
-1. S-MiXcan based MD TWAS using Chen 2022 GWAS summary statistics .
-2. S-MiXcan based breast cancer risk TWAS using BCAC GWAS summary statistics.
+The full pipeline used in discovery analyses has two stages: (1) training the
+MiXcan2 ensemble prediction models, and (2) running the TWAS (prediction
++ association) using those trained models. Scripts for both stages are
+included in the `scripts/` folder.
 
-## Software Requirements
+**1. Train the ensemble models.** Please note that the genomics data are protected due to participant privacy and data governance requirements. To access these data, please refer to the data access request procedures. 
+Once you have access to the GTEx and GWAS data (see the preprint for a full
+description of the training data and study population), run
+[`scripts/run_ensemble_mixcan2.R`](scripts/run_ensemble_mixcan2.R) to build MiXcan2
+models trained using GTEx v8 mammary tissue samples from female subjects
+with European ancestry.
 
-### R Packages
+**2. Run the TWAS.** With trained models in hand, the TWAS itself is run
+in two steps, also in `scripts/`:
+
+- Step 1 (prediction): [`scripts/predict_expression.R`](scripts/predict_expression.R)
+  applies the trained MiXcan2 weights to genotype data to predict
+  cell-type-level gene expression (GReX) for each sample.
+- Step 2 (association): [`scripts/association_analysis.R`](scripts/association_analysis.R)
+  tests the predicted expression from Step 1 for association with the
+  phenotype(s) of interest.
+
+
+# 2. Reproducing S-MiXcan (Validation & Enrichment) Results
+
+We applied S-MiXcan to  (1) validate significant genes in  MD TWAS using Chen 2022 GWAS summary statistics 
+and (2) evaluate their association with breast cancer risk using BCAC GWAS summary statistics.
+
+As this analysis only requires prediction weights from discovery analysis and a subset of GWAS summary
+statistics, which can be made publicly available. We uploaded data together with step-by-step codes for 
+reproducible analysis. The details are as follows: 
+
+### Software Installation
 
 Install R and the R packages used by the scripts:
 
@@ -44,9 +71,9 @@ sudo xcode-select --install
 open https://mac.r-project.org/tools/gfortran-14.2-universal.pkg
 ```
 
-## Input Data
+### Input Data
 
-### 1. Model Weight Files
+#### 1. Model Weight Files
 
 The model weight files from MiXcan2 used by these scripts are included in `Data/`:
 
@@ -55,7 +82,7 @@ The model weight files from MiXcan2 used by these scripts are included in `Data/
 - `subset_weight_mixcan2_fibroblast.csv`
 - `subset_weight_predixcanlike.csv`
 
-### 2. 1000 Genomes Reference Files
+#### 2. 1000 Genomes Reference Files
 
 The per-gene 1000 Genomes reference files used by these scripts are included in `Data/`:
 
@@ -63,7 +90,7 @@ The per-gene 1000 Genomes reference files used by these scripts are included in 
 - `1000Genome_Ref/{gene_id}_eur_hg38_012.raw`
 - `1000Genome_kgp_eur_unrelated_samples_ID.txt`
 
-### 3. GWAS Summary Statistics (Chen 2022) for MD
+#### 3. GWAS Summary Statistics (Chen 2022) for MD
 
 The hg38 mammographic density GWAS subsets required to reproduce these TWAS results are included under `Data/`:
 
@@ -72,42 +99,34 @@ Data/MD_results_2021/DA_MetaResultswInfo_20210609_hg38_repro_subset.txt
 Data/MD_results_2021/NDA_MetaResultswInfo_20210609_hg38_repro_subset.txt
 Data/MD_results_2021/PMD_MetaResultswInfo_20210609_hg38_repro_subset.txt
 ```
+More details about the generation of this dataset is in the later section. 
 
-These subset files were created from the dense area (DA), non-dense area (NDA), and percent mammographic density (PMD) GWAS summary statistics from Chen et al., 2022, Breast Cancer Research 24:27, for the European ancestry replication population:
-
-- Link: <https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results/gwas-summary-results-1>
-- Article DOI: <https://doi.org/10.1186/s13058-022-01524-0>
-- The analysis focuses on significant genes and uses hg38 coordinates. See below for details.
-
-### 4. BCAC Overall Breast Cancer GWAS Summary Statistics
-
-Download the 2020 overall breast cancer summary statistics from the BCAC summary-results page:
-
-- BCAC summary results: <https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results>
-- The analysis focuses on significant genes and uses hg38 coordinates. See below for details.
-
-Use the European ancestry overall breast cancer meta-analysis summary statistics for 133,384 cases and 113,789 controls. The hg38 BCAC overall breast cancer GWAS subset required to reproduce these TWAS results is included under `Data/`:
+#### 4. BCAC Overall Breast Cancer GWAS Summary Statistics
+The hg38 BCAC overall breast cancer GWAS subset required to reproduce these TWAS results is included under `Data/`:
 
 ```text
 Data/bcac_2020_sumstats_for_s-mixcan_hg38_repro_subset.csv
 ```
+More details about the generation of this dataset is in the later section. 
 
-### 5. BCAC Breast Cancer Subtype GWAS Z-Scores
+#### 5. BCAC Breast Cancer Subtype GWAS Z-Scores
 
+The hg38 subtype z-score subset required to reproduce these TWAS results is included under `Data/`:
+
+```text
+Data/bcac_2020_subtype_zscores_for_s-mixcan_hg38_repro_subset.txt
+```
 Download the breast cancer subtype summary statistics from the same BCAC summary-results page:
 
 - BCAC summary results: <https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results>
 - The analysis focuses on significant genes and uses hg38 coordinates. See below for details.
 
-Use the European ancestry subtype results for luminal A-like, luminal B-like, luminal B/HER2-negative-like, HER2-enriched-like, and triple-negative breast cancer. The hg38 subtype z-score subset required to reproduce these TWAS results is included under `Data/`:
+Use the European ancestry subtype results for luminal A-like, luminal B-like, luminal B/HER2-negative-like, HER2-enriched-like, and triple-negative breast cancer. 
 
-```text
-Data/bcac_2020_subtype_zscores_for_s-mixcan_hg38_repro_subset.txt
-```
 
 The subtype analysis expects z-score columns for `Luminal_A`, `Luminal_B`, `Luminal_B_HER2Neg`, `HER2_Enriched`, and `Triple_Neg`.
 
-## Running the Analyses
+### Running the Analyses
 
 Set `MIXCAN_ANALYSIS_DIR` from the repository root and run:
 
@@ -120,7 +139,7 @@ Rscript SMiXcan_Analysis/Codes/runSMiXcan_bcac.R
 Rscript SMiXcan_Analysis/Codes/runSMiXcan_subtype.R
 ```
 
-## Expected Outputs
+### Expected Outputs
 
 The scripts write output files under `analysis_dir/Result/`:
 
@@ -132,19 +151,31 @@ The scripts write output files under `analysis_dir/Result/`:
 The corresponding result tables used in the manuscript are included in this repository under `SMiXcan_Analysis/Result_*`.
 
 
-## Additional Information of the Input Data
+### Additional Information of the Input Data (Not Needed for Reproducing Results)
 
-### Creation of the MD GWAS Subsets
+#### Creation of the MD GWAS Subsets
 <!--The repository includes the MD rows that match the bundled model weights and 1000 Genomes reference files. To recreate these subset files from the full Chen 2022 mammographic density GWAS files, download the original hg19 files and place them in :
 -->
- To create the input data, download the full Chen 2022 mammographic density GWAS files and save as following:
+
+
+- Link: <https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results/gwas-summary-results-1>
+
+- The analysis focuses on significant genes and uses hg38 coordinates. See below for details.
+
+
+ To create the input data, download the full Chen 2022 mammographic density GWAS files from 
+ [here](https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results/gwas-summary-results-1) 
+ and save as following:
 ```text
 /path/to/analysis_dir/MD_results_2021/DA_MetaResultswInfo_20210609.txt
 /path/to/analysis_dir/MD_results_2021/NDA_MetaResultswInfo_20210609.txt
 /path/to/analysis_dir/MD_results_2021/PMD_MetaResultswInfo_20210609.txt
 ```
+Article DOI is <https://doi.org/10.1186/s13058-022-01524-0>. These files include  dense area (DA), 
+non-dense area (NDA), and percent mammographic density (PMD) GWAS summary statistics from Chen et al., 2022, 
+Breast Cancer Research 24:27, for the European ancestry replication population:
 
-Then lift them from hg19 to hg38:
+The summary statistics is based on hg19. First, lift them from hg19 to hg38:
 
 Install Python with `pandas` and `pyliftover` before running the liftover script:
 
@@ -166,7 +197,7 @@ The liftover script saves the results as:
 /path/to/analysis_dir/MD_results_2021/PMD_MetaResultswInfo_20210609_hg38.txt
 ```
 
-Subset to significant genes:
+Then, subset to significant genes:
 
 ```bash
 Rscript SMiXcan_Analysis/Codes/make_repro_md_gwas_subset.R /path/to/analysis_dir/MD_results_2021
@@ -180,9 +211,11 @@ Data/MD_results_2021/NDA_MetaResultswInfo_20210609_hg38_repro_subset.txt
 Data/MD_results_2021/PMD_MetaResultswInfo_20210609_hg38_repro_subset.txt
 ```
 
-### Creation of the Input Reference LD
+#### Creation of the Input Reference LD
 
-Download reference genome from https://www.cog-genomics.org/plink/2.0/resources . Use 2022-08-04 Byrska-Bishop et al. (build 38, 3202 samples, contigs unphased). Please pick‘Split by chromosome’, ‘info annotations’, ‘King-based pedigree corrections. Save files in `analysis_dir/reference_pgen/`. 
+Download reference genome from https://www.cog-genomics.org/plink/2.0/resources. 
+Use 2022-08-04 Byrska-Bishop et al. (build 38, 3202 samples, contigs unphased). 
+Please pick‘Split by chromosome’, ‘info annotations’, ‘King-based pedigree corrections. Save files in `analysis_dir/reference_pgen/`. 
 
 The reference-regeneration script requires PLINK2. One convenient option is to install it with conda:
 
@@ -211,23 +244,25 @@ The output will be LD matrix for each gene, and saved in `Data/1000Genome_Ref/`.
 
 ### Creation of the Input BCAC GWAS Subsets
 
-To create the input data, download the orginal input data BCAC 2020 GWAS files and save as following:
 
-- BCAC summary results: <https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results>
 
-Prepare the full hg38 files from the original file containing these columns:
 
-- Overall BCAC: `CHR`, `POS_hg38`, `Baseline.Meta`, `Effect.Meta`, `Beta.meta`, and `sdE.meta`.
-- BCAC subtype: `var_name`, `POS_hg38`, and z-score columns for `Luminal_A`, `Luminal_B`, `Luminal_B_HER2Neg`, `HER2_Enriched`, and `Triple_Neg`.
+To create the input data, download the orginal input data BCAC 2020 GWAS files from 
+[here](https://www.ccge.medschl.cam.ac.uk/breast-cancer-association-consortium-bcac/data-data-access/summary-results). 
+Use the European ancestry overall breast cancer meta-analysis summary statistics for 133,384 cases and 113,789 controls. 
+Keep these columns for BC and its subtype analyses:
 
-Save the full prepared files as:
+- Overall BC: `CHR`, `POS_hg38`, `Baseline.Meta`, `Effect.Meta`, `Beta.meta`, and `sdE.meta`.
+- BC subtype: `var_name`, `POS_hg38`, and z-score columns for `Luminal_A`, `Luminal_B`, `Luminal_B_HER2Neg`, `HER2_Enriched`, and `Triple_Neg`.
+
+Then, prepare the  hg38 files from hg19 as above and save the results as:
 
 ```text
 Data/bcac_2020_sumstats_for_s-mixcan_hg38.csv
 Data/bcac_2020_subtype_zscores_for_s-mixcan_hg38.txt
 ```
 
-Then create the input data:
+Then subset to the significant gene related subset as input using:
 
 ```bash
 Rscript SMiXcan_Analysis/Codes/make_repro_gwas_subset.R

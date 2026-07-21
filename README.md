@@ -1,36 +1,43 @@
 
-<!-- README.md is generated from README.Rmd. Please edit README.Rmd file -->
+<!-- README.md is NOT generated from README.Rmd. Please edit README.Rmd file -->
 
-# `MiXcan: Statistical Framework for Cell-type-Aware Transcriptome-Wide Association Studies with Bulk Tissue Data`
+# `Cell-type-aware transcriptome-wide association study of mammographic density phenotypes`
 
-## Introduction to **MiXcan**
+A full description of the manuscript can be found 
+[here](https://www.medrxiv.org/content/10.1101/2025.11.25.25341027v1).
 
-**Goal:**
+
+
+## 1.Introduction
+
+Analyses method **MiXcan2:**
 
 - Constructs cell-type-level prediction models for genetically regulated
-  expression (GReX);
-
+  expression (GReX) via an ensemble strategy;
 - Predicts cell-type-level GReX in new genotype data; and
-
 - Performs cell-type-aware TWAS.
+- A full description of the method can be found 
+[here](https://www.nature.com/articles/s41467-023-35888-4).
+
+Analyses method  **S-MiXcan**
+
+- With cell-type-level prediction models for GReX, infers cell-type-level GReX associations directly from GWAS summary statistics without requiring individual-level genotype data;
+- A full description of the method can be found 
+[here](https://www.medrxiv.org/content/10.64898/2026.03.22.26349035v1)
 
 **Advantages over tissue-level TWAS:**
 
 - Improves GReX prediction accuracy;
-
 - Boosts the study power, especially for genes that function in minor
   cell types or have different association directions in different cell
   types;
-
 - Sheds light on the responsible cell type(s) of associations.
 
 **Disadvantages over tissue-level TWAS:**
 
 - Requires prior knowledge on disease-critical cell types and their
   proportions in tissue;
-
 - Has more model parameters;
-
 - May be less powerful than tissue-level TWAS for genes that have
   similar disease associations in different cell types or function in
   major cell types.
@@ -39,32 +46,23 @@
 
 - Prediction model construction: genotype, covariates, and gene
   expression data (same as in PrediXcan) + cell-type composition
-  estimates (e.g. from existing methods, such as ESTIMATE, CIBERSORT,
-  xCell).
+  estimates (e.g. from existing methods, such as BayesDebulk).
 
-- Association Analysis: genotype, covariates and phenotype data (same as
-  in PrediXcan).
+- Association Analysis: individual level data (e.g. genotype, covariates and phenotype data; same as
+  in PrediXcan) or GWAS summary statistics.
 
 **Output:**
 
 - Prediction model construction: Cell-type-specific or nonspecific
   prediction weights for different genes.
-
 - Association Analysis: Tissue-level association p-values and
   cell-type-level association summaries including estimates, standard
   error and p-values.
 
-A full description of the method can be found in our
-[paper](https://www.medrxiv.org/content/10.1101/2025.11.25.25341027v1).
 
-``` r
-knitr::opts_chunk$set(echo = TRUE)
-library(MiXcan2) 
-```
+## 2.Installation
 
-## Installation
-
-### Hardware Requirements
+#### Hardware Requirements
 
 The MiXcan package requires only a standard computer with a reasonable
 RAM/CPU to support the operations. The minimal RAM recommended by
@@ -72,55 +70,46 @@ authors is 2 GB. Authors used a computer with the following
 specification:
 
 RAM: 32 GB
-
 CPU: 2.3 GHz 8-core
 
-### Software Requirements
+#### Software Requirements
 
 The github package is developed on macOS operating systems. The MiXcan
 pacakge is developed under an open source software R (version 4.1.2).
 Different versions of R can be downloaded at
 <https://cran.r-project.org/>.
 
-### Package Installation
+#### Package Installation
 
 With R, users can install the MiXcan package directly from GitHub with
 [devtools](https://github.com/hadley/devtools):
 
 ``` r
+knitr::opts_chunk$set(echo = TRUE)
+library(MiXcan2) 
+```
+``` r
+# installation of MiXcan2
 install.packages("devtools")
 devtools::install_github("songxiaoyu/MiXcan2/Package")
 ```
 
+For install for S-MiXcan, please refer its own [GitHub](https://github.com/songxiaoyu/SMiXcan) page.
+
 The typical install time of the package is less than 5 minutes.
 
-## Running the pipeline on your own data
 
-The full pipeline used in this study has two stages: (1) training the
-MiXcan2 ensemble prediction models, and (2) running the TWAS (prediction
-+ association) using those trained models. Scripts for both stages are
-included in the `scripts/` folder.
+## 3. Reproduce the Publication Results
 
-**1. Train the ensemble models.** Once you have access to the GTEx and
-GWAS data used to train the models (see the preprint for a full
-description of the training data and study population), run
-[`scripts/run_ensemble_mixcan2.R`](scripts/run_ensemble_mixcan2.R) to build MiXcan2
-models trained using GTEx v8 mammary tissue samples from female subjects
-with European ancestry.
+The entire reproducing pipeline to generate results from raw data is available [here](https://github.com/songxiaoyu/MiXcan2/blob/main/REPRODUCING_RESULTS.md).
+Please note that the genomics data are not accessible due to participant privacy and data governance 
+requirements, and for those parts we only provide codes and data access instructions (in manuscript).
+For validation studies and breast cancer enrichment analyses, where raw data is not needed, we provided
+end-to-end pipeline for analysis. 
 
-**2. Run the TWAS.** With trained models in hand, the TWAS itself is run
-in two steps, also in `scripts/`:
+## 4. Toy Example to Illustrate the Usage
 
-- Step 1 (prediction): [`scripts/predict_expression.R`](scripts/predict_expression.R)
-  applies the trained MiXcan2 weights to genotype data to predict
-  cell-type-level gene expression (GReX) for each sample.
-- Step 2 (association): [`scripts/association_analysis.R`](scripts/association_analysis.R)
-  tests the predicted expression from Step 1 for association with the
-  phenotype(s) of interest.
-
-## Example of use
-
-Since the input data used in our study is not publicly available, the
+As the input data used in our study is not publicly available, the
 example below uses simulated pseudo data to demonstrate the MiXcan
 analysis pipeline on a single gene. In reality, multiple genes can be
 analyzed in parallel, and a holdout set can be pre-excluded to allow

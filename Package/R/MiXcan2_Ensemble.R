@@ -26,14 +26,14 @@
 #' Non-Specific models.}
 #' \item{all_summary}{All B model descriptions w/o summarization (average).}
 #' \item{all_weights}{All B weights w/o summarization (average).}
+#' @importFrom foreach foreach %dopar%
 #' @export
 #'
 MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
                           B=10, seed=NULL) {
 
-  # start foreach
-  `%dopar%` <- foreach::`%dopar%`
-  res=foreach(i = 1:B, .combine='c') %dopar% {
+
+  res=foreach::foreach(i =  seq_len(B), .combine='c') %dopar% {
     print(i)
     # set seed
     if (is.null(seed)==F) {seed1=seed+i*13; set.seed(seed1)}
