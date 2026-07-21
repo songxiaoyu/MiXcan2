@@ -1,21 +1,23 @@
-test_that("MiXcan2 package loads and exposes functions", {
+test_that("MiXcan2 loads and documents the public pipeline functions", {
   expect_true(requireNamespace("MiXcan2", quietly = TRUE))
 
   exports <- getNamespaceExports("MiXcan2")
-  expect_type(exports, "character")
-  expect_gt(length(exports), 0L)
 
-  exported_objects <- mget(
-    exports,
-    envir = asNamespace("MiXcan2"),
-    inherits = FALSE
+  expect_true(
+    all(
+      c(
+        "MiXcan2_ensemble",
+        "MiXcan2_prediction",
+        "MiXcan2_association"
+      ) %in% exports
+    )
   )
-  exported_functions <- vapply(exported_objects, is.function, logical(1))
-
-  expect_true(any(exported_functions))
 })
 
-test_that("MiXcan2 version is available", {
+
+test_that("MiXcan2 has a valid package version", {
   version <- utils::packageVersion("MiXcan2")
+
   expect_s3_class(version, "package_version")
+  expect_true(version >= package_version("0.1.0"))
 })

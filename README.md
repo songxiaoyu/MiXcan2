@@ -221,9 +221,14 @@ We can observe the following variables in the application data:
 [6,]   1   2   0   1   1   2   0   0   2   1
 > DM_test[1:6]
 [1] 0.4074296 4.5332502 1.1829998 4.0772315 3.1780357 1.5153982
-> CovM_test[1:6]
-[1] -0.36602729 -0.12025695  1.58980932 -1.58950575  0.25009968 -0.09430046
-
+> CovM_test[1:6,]
+             age      score
+[1,] -0.36602729 -0.5751098
+[2,] -0.12025695 -1.7366401
+[3,]  1.58980932 -0.2018158
+[4,] -1.58950575 -0.3643292
+[5,]  0.25009968  0.6180302
+[6,] -0.09430046  0.8100630
 
 ```
 
@@ -248,7 +253,7 @@ ensbl <- MiXcan2_ensemble(y = Y_test, x = X_test, cov = Cov_test,
 +                           yName = gene_name, B = 9, seed = 123)
 
 # show results - assembled intercepts
-ensbl$ensemble_intecept
+ensbl$ensemble_intercept
                  intercept_cell_1 intercept_cell_2
 CellTypeSpecific         1.096866       -0.0784024
 # show results - assembled weights (will be used in the downstream analyses)

@@ -4,7 +4,7 @@
 \alias{MiXcan2_association}
 \title{Association analysis with MiXcan predicted genetically regulated expression}
 \usage{
-MiXcan2_association(new_y, new_cov, new_outcome, family = gaussian)
+MiXcan2_association(new_y, new_cov = NULL, new_outcome, family = gaussian)
 }
 \arguments{
 \item{new_y}{A N by 2 matrix indicating the predicted gene expression levels in two

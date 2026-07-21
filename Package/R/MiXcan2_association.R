@@ -18,8 +18,10 @@
 #' @export
 #' @importFrom ACAT ACAT
 #'
-MiXcan2_association <- function(new_y, new_cov, new_outcome, family= gaussian){
-  dat <- data.frame(new_y, new_cov,  y = new_outcome)
+MiXcan2_association <- function(new_y, new_cov=NULL, new_outcome, family= gaussian){
+  if (is.null(new_cov)) {
+    dat <- data.frame(new_y,  y = new_outcome)
+  } else {dat <- data.frame(new_y, new_cov,  y = new_outcome)}
   ft <- glm(as.formula(paste0("y ~.")), data = dat, family = family)
   res <- broom::tidy(ft)
   res1 <- res %>% filter(term == "cell_1")

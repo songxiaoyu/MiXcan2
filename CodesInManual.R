@@ -70,7 +70,7 @@ Cov_test[1:6,]
 # We can observe the following variables in the application data:
 XM_test[1:6,]
 DM_test[1:6]
-CovM_test[1:6]
+CovM_test[1:6,]
 
 
 # train 
