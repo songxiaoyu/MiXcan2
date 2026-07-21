@@ -16,6 +16,7 @@
 #' @return A tibble showing the estimate, standard error, p value for cell 1 and cell 2
 #' and the combined p-value using the Cauchy combination.
 #' @export
+#' @importFrom ACAT ACAT
 #'
 MiXcan2_association <- function(new_y, new_cov, new_outcome, family= gaussian){
   dat <- data.frame(new_y, new_cov,  y = new_outcome)

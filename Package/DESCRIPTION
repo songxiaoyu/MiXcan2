@@ -16,7 +16,8 @@ Imports:
     broom,
     rlist,
     dplyr,
-    foreach
+    foreach,
+    ACAT
 Remotes: 
     github::yaowuliu/ACAT
 Suggests:

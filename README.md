@@ -115,20 +115,21 @@ analysis pipeline on a single gene. In reality, multiple genes can be
 analyzed in parallel, and a holdout set can be pre-excluded to allow
 model training on the remaining samples.
 
-### Data
+#### Simuate Data
 
 ``` r
-# Pseudo data creation
+## Pseudo data creation
 gene_name <- "BRCA1"
 
 set.seed(123)
-N <- 100  # number of samples
-P <- 10   # number of genetic predictors
-Q <- 3    # number of covariates
 
-# Covariate matrix (e.g. age, principal components)
-Cov_test <- matrix(rnorm(N * Q), nrow = N, ncol = Q)
-colnames(Cov_test) <- c("age", "PC1", "PC2")
+P <- 10   # number of genetic predictors in both training and application data
+N <- 100  # number of training data
+Q1 <- 3    # number of covariates in training data
+M <- 1000 # number of application data
+Q2 <- 2    # number of covariates in application data
+
+# --- Simulation training data 
 
 # Cell-type fraction estimates (bounded between 0 and 1)
 Pi_test <- runif(N, min = 0.1, max = 0.9)
@@ -148,164 +149,199 @@ X_rows_test <- data.frame(
   eff      = sample(c("A","T","C","G"), P, replace = TRUE)
 )
 
+# Covariate matrix (e.g. age, principal components)
+Cov_test <- matrix(rnorm(N * Q1), nrow = N, ncol = Q1)
+colnames(Cov_test) <- c("age", "PC1", "PC2")
+
 # Expression levels
-Y_test <- rnorm(N, mean = 0, sd = 1)
+Y_test1 <- rnorm(N, mean = 2*X_test[,1], sd = 1)
+Y_test2 <- rnorm(N, mean = 0, sd = 1)
+Y_test <- Y_test1*Pi_test+Y_test2*(1-Pi_test)
+
+
+# ------ Simulate application data
+
+# Genotype matrix; column names are the same as training data
+XM_test <- matrix(sample(0:2, M * P, replace = TRUE), nrow = M, ncol = P)
+colnames(XM_test) <- paste0("V", sample(40:100, P))
+
+# Expression levels (unobservable in real data)
+YM1_test <- rnorm(M, mean = 2*XM_test[,1], sd = 1)
+YM2_test <- rnorm(M, mean = 0, sd = 1)
+
+# Covariate matrix (can be different from training data)
+CovM_test <- matrix(rnorm(M * Q2), nrow = M, ncol = Q2)
+colnames(CovM_test) <- c("age", "score")
+
+# phenotype associated with expression in both cell types
+DM_test <- rnorm(M, mean = 2*YM1_test+0.5*YM2_test, sd = 1)
+```
+#### Simulated data that can be obeserved
+
+We can observe the following variables in the training data:
+``` r
+> Pi_test[1:6]
+[1] 0.3300620 0.7306441 0.4271815 0.8064139 0.8523738 0.1364452
+> X_test[1:6,]
+     V94 V78 V76 V47 V86 V53 V87 V40 V62 V65
+[1,]   0   0   1   0   2   1   0   0   1   2
+[2,]   1   1   0   1   2   1   1   2   1   1
+[3,]   0   0   0   0   2   1   2   0   1   1
+[4,]   1   2   0   0   1   1   2   2   1   1
+[5,]   0   0   1   0   0   2   1   2   1   2
+[6,]   2   0   0   1   0   0   0   2   0   0
+> X_rows_test[1:6,]
+                  varID position   rsid ref eff
+1 chr21_3958870_T_T_b38  4397319 rs4711   A   C
+2 chr21_2968830_C_A_b38  2637837 rs6551   T   A
+3 chr21_2359184_C_G_b38  3015021 rs7347   G   T
+4 chr21_1426028_T_A_b38  2611015 rs7188   G   G
+5 chr21_4053899_A_T_b38  3753398 rs2362   A   G
+6 chr21_3078381_G_C_b38  4407639 rs9549   G   G
+> Y_test[1:6]
+[1]  1.2214868  0.9029712 -1.0829126  2.2228998 -0.2397309  0.8757725
+> Cov_test[1:6,]
+            age          PC1         PC2
+[1,] -1.3501461  0.929726653  0.71756885
+[2,] -0.2645207  0.312910943 -0.61896534
+[3,] -0.4718988 -0.000204297 -0.06492498
+[4,] -0.5691862 -0.250647707  0.75658230
+[5,]  2.3327194  1.520275176 -1.01422951
+[6,] -0.4890443 -2.093256519 -0.69207082
+```
+We can observe the following variables in the application data:
+``` r
+> XM_test[1:6,]
+     V96 V87 V97 V68 V74 V77 V45 V40 V73 V94
+[1,]   0   1   0   2   2   2   1   2   2   1
+[2,]   1   2   2   2   1   0   0   1   2   2
+[3,]   0   0   1   0   2   0   1   2   0   1
+[4,]   1   1   2   1   2   1   2   1   0   1
+[5,]   1   2   2   1   1   2   2   0   0   0
+[6,]   1   2   0   1   1   2   0   0   2   1
+> DM_test[1:6]
+[1] 0.4074296 4.5332502 1.1829998 4.0772315 3.1780357 1.5153982
+> CovM_test[1:6]
+[1] -0.36602729 -0.12025695  1.58980932 -1.58950575  0.25009968 -0.09430046
+
+
 ```
 
-### MiXcan analysis pipeline
+
+#### Traing MiXcan2 prediction model
+Estimating cell-type-specific (and nonspecific) GReX prediction
+weights of a gene using the MiXcan function.
 
 ``` r
 library(doParallel)
-```
-
-    ## Loading required package: foreach
-
-    ## Loading required package: iterators
-
-    ## Loading required package: parallel
-
-``` r
 library(tidyverse)
-```
-
-    ## Warning: package 'ggplot2' was built under R version 4.4.3
-
-    ## Warning: package 'tibble' was built under R version 4.4.3
-
-    ## Warning: package 'tidyr' was built under R version 4.4.3
-
-    ## Warning: package 'readr' was built under R version 4.4.3
-
-    ## Warning: package 'purrr' was built under R version 4.4.3
-
-    ## Warning: package 'dplyr' was built under R version 4.4.3
-
-    ## Warning: package 'lubridate' was built under R version 4.4.3
-
-    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-    ## ✔ dplyr     1.2.0     ✔ readr     2.2.0
-    ## ✔ forcats   1.0.1     ✔ stringr   1.6.0
-    ## ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
-    ## ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-    ## ✔ purrr     1.2.1
-
-    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ purrr::accumulate() masks foreach::accumulate()
-    ## ✖ dplyr::filter()     masks stats::filter()
-    ## ✖ dplyr::lag()        masks stats::lag()
-    ## ✖ purrr::when()       masks foreach::when()
-    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
-
-``` r
 library(rlist)
 nCores=detectCores()-1; registerDoParallel(nCores) # use parallel computing for speed, but leave 1 core out for other activities. 
 ```
 
-Step 2: Estimating cell-type-specific (and nonspecific) GReX prediction
-weights of a gene using the MiXcan function
+
+
 
 ``` r
-# X_test
-#      V70 V53 V59 V79 V63 V76 V80 V68 V49 V88
-# [1,]   1   1   0   2   0   1   2   0   2   1
-# [2,]   0   2   2   0   2   2   2   2   1   0
-# [3,]   0   0   2   2   0   2   1   0   2   2
-# [4,]   2   1   2   1   2   0   1   0   2   2
-# [5,]   0   0   1   0   2   1   1   1   2   0
-# [6,]   2   1   2   0   1   2   2   2   1   0
-
-# X_rows_test
-#             xNameMatrix position   rsid ref eff
-# 1 chr21_4380166_A_A_b38  4598800 rs2457   G   C
-# 2 chr21_2424043_A_C_b38  4171961 rs5424   A   T
-# 3 chr21_1669969_T_C_b38  4261569 rs9509   C   G
-# 4 chr21_1455554_T_G_b38  2729790 rs7777   C   A
-# 5 chr21_4849901_G_A_b38  2055678 rs9293   C   C
-# 6 chr21_2125566_T_T_b38  3991202 rs6735   C   A
-
-# Cov_test
-#             age         PC1        PC2
-# [1,] -0.5604757 -0.7104066  2.1988103
-# [2,] -0.2301775  0.2568837  1.3124130
-# [3,]  1.5587083 -0.2466919 -0.2651451
-# [4,]  0.0705084 -0.3475426  0.5431941
-# [5,]  0.1292877 -0.9516186 -0.4143399
-# [6,]  1.7150650 -0.0450277 -0.4762469
-
-# Pi_test
-# [1] 0.2897838 0.6491923 0.2806547 0.3547957 0.2391871 0.7411437
-
-# Y_test (numeric vector of length N)
-# [1]  1.7791027  0.5351380 -0.3719449 -1.0255422 -0.5824017  0.3428884
-```
-
-``` r
-set.seed(123)
 ensbl <- MiXcan2_ensemble(y = Y_test, x = X_test, cov = Cov_test,
-                              pi = Pi_test, xNameMatrix = X_rows_test,
-                              yName = gene_name, B = 3, seed = 123)
++                           pi = Pi_test, xNameMatrix = X_rows_test,
++                           yName = gene_name, B = 9, seed = 123)
+
+# show results - assembled intercepts
 ensbl$ensemble_intecept
-```
+                 intercept_cell_1 intercept_cell_2
+CellTypeSpecific         1.096866       -0.0784024
+# show results - assembled weights (will be used in the downstream analyses)
+ensbl$ensemble_weight
+# A tibble: 8 × 9
+# Groups:   yName, varID, position, rsid, ref, eff [8]
+  yName varID    position rsid  ref   eff   type  weight_cell_1 weight_cell_2
+  <chr> <chr>       <int> <chr> <chr> <chr> <chr>         <dbl>         <dbl>
+1 BRCA1 chr21_1…  2611015 rs71… G     G     Cell…        0.0157      -0.00525
+2 BRCA1 chr21_2…  3162112 rs19… T     A     Cell…        0.0537       0.0537 
+3 BRCA1 chr21_2…  1282765 rs18… T     C     Cell…       -0.0616      -0.0616 
+4 BRCA1 chr21_2…  3015021 rs73… G     T     Cell…       -0.0136      -0.0136 
+5 BRCA1 chr21_2…  2637837 rs65… T     A     Cell…       -0.0839      -0.0839 
+6 BRCA1 chr21_3…  4407639 rs95… G     G     Cell…       -0.0582       0.0516 
+7 BRCA1 chr21_3…  4397319 rs47… A     C     Cell…        1.23         0.231  
+8 BRCA1 chr21_4…  3753398 rs23… A     G     Cell…       -0.103       -0.103  
 
-    ##       intercept_cell_1 intercept_cell_2
-    ## NonSpecific       -0.0246929       -0.0246929
-    ## NoPredictor       -0.0869106       -0.0869106
-
-Step 3: Extracting the weights and model summaries from the MiXcan
-output. Raw SNP weights from every individual ensemble model (across all
-B iterations). No averaging applied across B model interations and
-retaining all weights including 0.
-
-``` r
+# Weights for all the B boostrap samples 
 all_weights_df <- ensbl$all_weights
 head(all_weights_df)
-```
+  ID yName                 varID position   rsid ref eff weight_cell_1
+1  1 BRCA1 chr21_3958870_T_T_b38  4397319 rs4711   A   C    1.33605586
+2  1 BRCA1 chr21_2968830_C_A_b38  2637837 rs6551   T   A   -0.07936197
+3  1 BRCA1 chr21_2359184_C_G_b38  3015021 rs7347   G   T   -0.05338579
+4  1 BRCA1 chr21_1426028_T_A_b38  2611015 rs7188   G   G    0.00000000
+5  1 BRCA1 chr21_4053899_A_T_b38  3753398 rs2362   A   G   -0.19830951
+6  1 BRCA1 chr21_3078381_G_C_b38  4407639 rs9549   G   G   -0.16260200
+  weight_cell_2             type
+1    0.12890964 CellTypeSpecific
+2   -0.07936197 CellTypeSpecific
+3   -0.05338579 CellTypeSpecific
+4    0.00000000 CellTypeSpecific
+5   -0.19830951 CellTypeSpecific
+6    0.10326876 CellTypeSpecific
 
-    ##   ID yName                 varID position   rsid ref eff weight_cell_1
-    ## 1  1 BRCA1 chr21_4380166_A_A_b38  4598800 rs2457   G   C             0
-    ## 2  1 BRCA1 chr21_2424043_A_C_b38  4171961 rs5424   A   T             0
-    ## 3  1 BRCA1 chr21_1669969_T_C_b38  4261569 rs9509   C   G             0
-    ## 4  1 BRCA1 chr21_1455554_T_G_b38  2729790 rs7777   C   A             0
-    ## 5  1 BRCA1 chr21_4849901_G_A_b38  2055678 rs9293   C   C             0
-    ## 6  1 BRCA1 chr21_2125566_T_T_b38  3991202 rs6735   C   A             0
-    ##   weight_cell_2        type
-    ## 1             0 NoPredictor
-    ## 2             0 NoPredictor
-    ## 3             0 NoPredictor
-    ## 4             0 NoPredictor
-    ## 5             0 NoPredictor
-    ## 6             0 NoPredictor
-
-Overall averaged model performance metrics (e.g. cross-validated R²,
-number of SNPs) Results are summarized across all B models into a single
-row per gene
-
-``` r
+# Model summary for the selected model type 
 ensbl_summary_by_type =ensbl$ensemble_summary_by_type
-ensbl_summary_by_type
-```
+> ensbl_summary_by_type
+# A tibble: 1 × 8
+  Gene  model_type  n_snp_input n_snp_model in.sample.cor in.sample.R2 cv.cor
+  <chr> <chr>             <dbl>       <dbl>         <dbl>        <dbl>  <dbl>
+1 BRCA1 CellTypeSp…          10        6.33         0.804        0.626  0.732
+# ℹ 1 more variable: cv.R2 <dbl>
 
-    ## # A tibble: 2 × 8
-    ##   Gene  model_type  n_snp_input n_snp_model in.sample.cor in.sample.R2 cv.cor
-    ##   <chr> <chr>             <dbl>       <dbl>         <dbl>        <dbl>  <dbl>
-    ## 1 BRCA1 NoPredictor          10           0         0                0  0    
-    ## 2 BRCA1 NonSpecific          10           1         0.210            0 -0.340
-    ## # ℹ 1 more variable: cv.R2 <dbl>
-
-Model performance metrics from each ensemble model (across B
-interations). Reults are prior to averaging, one row per model
-iteration.
-
-``` r
+# Model summary for each of the B boostrap samples
 ensbl_all_summary =ensbl$all_summary 
 ensbl_all_summary
+  yName n_snp_input n_snp_model       model_type in.sample.cor in.sample.R2
+1 BRCA1          10           7 CellTypeSpecific     0.8271396    0.6683251
+2 BRCA1          10           7 CellTypeSpecific     0.8239286    0.6597136
+3 BRCA1          10           6 CellTypeSpecific     0.7969319    0.6131068
+4 BRCA1          10           5 CellTypeSpecific     0.7790375    0.5812645
+5 BRCA1          10           5 CellTypeSpecific     0.7942746    0.6074591
+6 BRCA1          10           6 CellTypeSpecific     0.7918577    0.6092398
+7 BRCA1          10           6 CellTypeSpecific     0.8136668    0.6433772
+8 BRCA1          10           8 CellTypeSpecific     0.7965697    0.6181685
+9 BRCA1          10           7 CellTypeSpecific     0.8091436    0.6376223
+     cv.cor     cv.R2
+1 0.7517858 0.5616249
+2 0.7527023 0.5597877
+3 0.7391163 0.5346809
+4 0.6885775 0.4686230
+5 0.7374831 0.5328995
+6 0.7084881 0.4988803
+7 0.7639915 0.5731816
+8 0.7229446 0.5189709
+9 0.7245171 0.5178526
 ```
 
-    ##   yName n_snp_input n_snp_model  model_type in.sample.cor in.sample.R2
-    ## 1 BRCA1          10           0 NoPredictor     0.0000000            0
-    ## 2 BRCA1          10           1 NonSpecific     0.1986117            0
-    ## 3 BRCA1          10           1 NonSpecific     0.2218347            0
-    ##       cv.cor       cv.R2
-    ## 1  0.0000000  0.00000000
-    ## 2 -0.3679533 -0.05267096
-    ## 3 -0.3112200 -0.02878812
+#### Apply prediction weights to the new genomics data
+``` r
+# select SNP with nonzero weights
+selected_X_idx=match(ensbl$ensemble_weight$varID, X_rows_test$varID)
+> selected_X_idx
+[1] 4 8 7 3 2 6 1 5
+
+# apply the weights to new genotype data
+pred=MiXcan2_prediction(weight=ensbl$ensemble_weight[selected_X_idx,c("weight_cell_1", "weight_cell_2")], 
+                       new_x=as.matrix(XM_test[,selected_X_idx]))
+pred[1:6,]
+          cell_1      cell_2
+[1,]  0.76815421 -0.01360668
+[2,] -0.21432724 -0.23523150
+[3,]  0.79654834 -0.20497674
+[4,]  2.06816667  0.15409435
+[5,]  2.25082166  0.44663144
+[6,] -0.09084614  0.10801379
+```
+#### Associate predicted cell-type-level expression with phenotype
+``` r
+MiXcan2_association(new_y=pred, new_cov=CovM_test, 
+                    new_outcome=DM_test, family = gaussian) 
+                    
+  cell1_est  cell1_se    cell1_p cell2_est cell2_se   cell2_p p_combined
+1 0.5258613 0.2478619 0.03411882 -1.489066 1.091636 0.1728543 0.05750228
+```
