@@ -66,7 +66,7 @@ MiXcan2_ensemble=function(y, x, cov, pi, yName=NULL, xNameMatrix=NULL,
   sum2=a %>% mutate(CTS= 1*(model_type=="CellTypeSpecific")) %>%
     mutate(NS=1*(model_type=="NonSpecific")) %>%
     mutate(NP=1*(model_type=="NoPredictor")) %>%
-    dplyr::select(!"model_type")  %>%
+    dplyr::select(!c("model_type", "n_snp_model", "in.sample.cor", "in.sample.R2", "cv.cor", "cv.R2"))  %>%
     summarise(across(n_snp_input:NP, mean)) %>%
     mutate(Gene=a[1,1],.before = 1)
 
