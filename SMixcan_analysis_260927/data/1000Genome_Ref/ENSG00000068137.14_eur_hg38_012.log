@@ -1,0 +1,23 @@
+PLINK v2.0.0-a.6.9 64-bit (29 Jan 2025)
+Options in effect:
+  --bfile /Users/zhusinan/Library/CloudStorage/Dropbox/Paper_SMiXcan/Github/Analysis_code/MD_BCAC_NewWeights_v3/data/1000Genome_Ref/ENSG00000068137.14_eur_hg38
+  --export A
+  --out /Users/zhusinan/Library/CloudStorage/Dropbox/Paper_SMiXcan/Github/Analysis_code/MD_BCAC_NewWeights_v3/data/1000Genome_Ref/ENSG00000068137.14_eur_hg38_012
+
+Hostname: shuomouminamis-MacBook-Pro.local
+Working directory: /Users/zhusinan/Library/CloudStorage/Dropbox/Paper_SMiXcan/Github
+Start time: Sun Sep 27 19:04:51 2026
+
+Random number seed: 1790507091
+32768 MiB RAM detected; reserving 16384 MiB for main workspace.
+Using up to 8 compute threads.
+633 samples (328 females, 305 males; 525 founders) loaded from
+/Users/zhusinan/Library/CloudStorage/Dropbox/Paper_SMiXcan/Github/Analysis_code/MD_BCAC_NewWeights_v3/data/1000Genome_Ref/ENSG00000068137.14_eur_hg38.fam.
+25 variants loaded from
+/Users/zhusinan/Library/CloudStorage/Dropbox/Paper_SMiXcan/Github/Analysis_code/MD_BCAC_NewWeights_v3/data/1000Genome_Ref/ENSG00000068137.14_eur_hg38.bim.
+Note: No phenotype data present.
+--export A:
+/Users/zhusinan/Library/CloudStorage/Dropbox/Paper_SMiXcan/Github/Analysis_code/MD_BCAC_NewWeights_v3/data/1000Genome_Ref/ENSG00000068137.14_eur_hg38_012.raw
+written.
+
+End time: Sun Sep 27 19:04:51 2026
