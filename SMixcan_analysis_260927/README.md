@@ -8,6 +8,9 @@ For the complete step-by-step workflow, input locations, output locations, and
 latest run status, see [`PIPELINE_DATA_AND_RESULTS.md`](PIPELINE_DATA_AND_RESULTS.md).
 All executable workflow files are organized under `scripts/`.
 
+The September MD allele-direction correction and its verification are recorded
+in [`MD_HARMONIZATION_AUDIT.md`](MD_HARMONIZATION_AUDIT.md).
+
 ## Scope
 
 The workflow analyzes the updated weights against:
@@ -142,6 +145,9 @@ Multiple-testing correction is intentionally not performed in this workflow.
 - Alleles are harmonized by same, swapped, strand-complement, and
   complement-plus-swapped matching. Effect estimates are sign-flipped for
   swapped matches.
+- For MD, `Allele1` is the effect allele for `Zscore` and `Allele2` is the
+  non-effect allele. The reference harmonizer must therefore receive
+  `Allele2` followed by `Allele1`; do not reverse this order.
 
 ## Reproducibility limitation
 

@@ -243,10 +243,12 @@ for (row_index in seq_len(nrow(groups))) {
 
   for (phenotype in names(md_data)) {
     md_chr <- md_data[[phenotype]]$data[chr_norm == target_chr]
+    # MD Zscore is the effect of Allele1. The reference marker and PLINK
+    # dosage are ordered non-effect/effect, so pass Allele2 before Allele1.
     aligned <- harmonize_to_reference(
       md_chr, reference_markers,
       chr_col = "chr", pos_col = "POS_hg38",
-      a1_col = "Allele1", a2_col = "Allele2",
+      a1_col = "Allele2", a2_col = "Allele1",
       statistic_columns = "Zscore", p_col = "P-value"
     )
     if (nrow(aligned)) aligned[, se_input := 1]

@@ -227,14 +227,15 @@ for (pheno in pheno_list) {
           next
         }
 
-        # Key step: harmonize GWAS to BIM by MarkerName_hg38 (supports palindromic + indels)
+        # MD Zscore is the effect of Allele1. The marker/reference genotype is
+        # ordered non-effect/effect, so harmonize as Allele2 then Allele1.
         gwas_aligned <- harmonize_gwas_to_bim_by_id(
           gwas_chr = gwas_chr,
           ld_bim   = ld_bim,
           chr_col  = "chr",
           pos_col  = "POS_hg38",
-          a1_col   = "Allele1",
-          a2_col   = "Allele2",
+          a1_col   = "Allele2",
+          a2_col   = "Allele1",
           z_col    = "Zscore",
           p_col    = "P-value"
         )
