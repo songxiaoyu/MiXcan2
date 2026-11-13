@@ -60,8 +60,9 @@ The compact benchmark retained for direction validation is:
 data/reference/result3_md_wrong_direction_benchmark.csv
 ```
 
-The original publication snapshot is stored only in the dated local archive;
-it is not required for the maintained workflow.
+The original publication snapshot is stored only in
+`Dropbox/Paper_MiXcan2/Archive/Paper_MiXcan2_local_archive_20261113/`; it is not
+required for the maintained workflow.
 
 ## Result3-compatible final result
 

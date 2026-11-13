@@ -19,6 +19,12 @@ Older publication snapshots, superseded outputs, raw GWAS files, generated
 PLINK artifacts, and IDE files are intentionally excluded from the active
 repository.
 
+The project-owner archive is stored outside GitHub at:
+
+```text
+Dropbox/Paper_MiXcan2/Archive/Paper_MiXcan2_local_archive_20261113/
+```
+
 ## Install MiXcan2
 
 Install the package directly from GitHub:

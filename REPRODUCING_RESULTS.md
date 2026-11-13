@@ -83,3 +83,9 @@ Large raw GWAS inputs, superseded outputs, generated PLINK files, and the older
 publication snapshot are maintained outside the active GitHub repository. They
 are not required to review the final delivery, and adding them back would make
 the repository ambiguous and unnecessarily large.
+
+The project-owner archive is stored at:
+
+```text
+Dropbox/Paper_MiXcan2/Archive/Paper_MiXcan2_local_archive_20261113/
+```
