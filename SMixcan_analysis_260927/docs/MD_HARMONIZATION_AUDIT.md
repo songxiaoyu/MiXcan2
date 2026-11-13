@@ -22,8 +22,9 @@ a1_col = "Allele2"
 a2_col = "Allele1"
 ```
 
-The publication-era script `SMiXcan_Analysis/Codes/runSMiXcan_MD.R` has the
-same correction to prevent future reruns from reintroducing the error.
+The superseded publication-era workflow was moved out of the active GitHub
+tree during repository cleanup. All maintained reruns should use
+`scripts/3_run_associations.R` in this project.
 
 ## Rerun verification
 
@@ -53,15 +54,14 @@ The former dated result directories were removed from the active GitHub
 project during the latest-only reorganization. They are not required to
 rebuild or validate the final MD result.
 
-The archived manuscript-correction table used to verify direction is:
+The compact benchmark retained for direction validation is:
 
 ```text
-SMiXcan_Analysis/Archive/Result2/Result_SMiXcan/SMiXcan_result_merged.csv
+data/reference/result3_md_wrong_direction_benchmark.csv
 ```
 
-Local file history identifies this as the corrected result used by the
-manuscript. It does not establish whether the file was delivered by email,
-Google Drive, or Dropbox in January/February 2026.
+The original publication snapshot is stored only in the dated local archive;
+it is not required for the maintained workflow.
 
 ## Result3-compatible final result
 
