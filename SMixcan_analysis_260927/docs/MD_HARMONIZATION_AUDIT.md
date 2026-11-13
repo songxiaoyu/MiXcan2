@@ -44,10 +44,14 @@ different SNP overlap for many models, and a different association
 regularization setting. A direction-only allele correction cannot change a
 two-sided p-value.
 
-## Corrected files
+## Corrected files retained in the current project
 
-- `results_sinan_20260927/md_results.csv`
-- `results_sinan_20260927/all_results.csv`
+- `data/derived/md_results_corrected_reg0p001_all_models.csv`
+- `results/final_md/smixcan_result3_method_direction_corrected.csv`
+
+The former dated result directories were removed from the active GitHub
+project during the latest-only reorganization. They are not required to
+rebuild or validate the final MD result.
 
 The archived manuscript-correction table used to verify direction is:
 
@@ -58,3 +62,22 @@ SMiXcan_Analysis/Archive/Result2/Result_SMiXcan/SMiXcan_result_merged.csv
 Local file history identifies this as the corrected result used by the
 manuscript. It does not establish whether the file was delivered by email,
 Google Drive, or Dropbox in January/February 2026.
+
+## Result3-compatible final result
+
+The December Result3 table was subsequently confirmed to have the wrong MD
+direction. For continuity with its newer marker-ID harmonization, indel
+support, and 503-sample EUR reference, the final collaborator result uses the
+Result3 method with fixed regularization `0.001`, but reverses the Result3 Z
+directions through the corrected effect/non-effect allele order.
+
+Across the 123 rows shared with the September weights, matched SNP counts and
+two-sided p-values reproduce Result3, while both cell-component Z scores are
+the negatives of Result3. Six genes newly available in the September weights
+are added with the same corrected workflow.
+
+Current delivery:
+
+```text
+MD_SMiXcan_delivery_Sinan_20261113/
+```

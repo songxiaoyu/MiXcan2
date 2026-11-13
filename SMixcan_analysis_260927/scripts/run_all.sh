@@ -25,5 +25,8 @@ fi
 
 Rscript "${SCRIPT_DIR}/3_run_associations.R"
 Rscript "${SCRIPT_DIR}/4_combine_results.R"
+SMIXCAN_CORRECTED_MD_FILE="${WORKFLOW_DIR}/results/current_run/md_results.csv" \
+  Rscript "${SCRIPT_DIR}/5_build_final_md_result.R"
 
-echo "Finished. Results are in ${WORKFLOW_DIR}/results_sinan_20260927"
+echo "Association results: ${WORKFLOW_DIR}/results/current_run"
+echo "Final validated MD result: ${WORKFLOW_DIR}/results/final_md"

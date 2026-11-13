@@ -1,0 +1,17 @@
+metric,value
+final_rows,177
+final_genes,21
+final_models,59
+result3_overlap_rows,123
+result3_overlap_genes,15
+result3_overlap_models,41
+new_gene_rows,54
+new_genes,6
+new_gene_models,18
+exact_matched_snp_rows,123
+p_join_equal_within_1e_12,123
+direction_reversed_cell_1_within_1e_12,123
+direction_reversed_cell_2_within_1e_12,123
+max_abs_p_join_diff,1.59872115546023e-14
+max_abs_direction_check_cell_1,2.04281036531029e-14
+max_abs_direction_check_cell_2,2.04281036531029e-14

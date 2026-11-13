@@ -24,7 +24,10 @@ legacy_reference_dir <- Sys.getenv(
   unset = ""
 )
 work_dir <- file.path(workflow_dir, "work")
-results_dir <- file.path(workflow_dir, "results_sinan_20260927")
+results_dir <- Sys.getenv(
+  "MD_BCAC_RESULTS_DIR",
+  unset = file.path(workflow_dir, "results", "current_run")
+)
 
 dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(reference_dir, recursive = TRUE, showWarnings = FALSE)
@@ -83,7 +86,7 @@ bcac_n_case <- 106278
 bcac_n_control <- 91477
 
 regularization_mode <- Sys.getenv("SMIXCAN_REGULARIZATION", unset = "fixed")
-regularization_scale <- as.numeric(Sys.getenv("SMIXCAN_REG_SCALE", unset = "0.1"))
+regularization_scale <- as.numeric(Sys.getenv("SMIXCAN_REG_SCALE", unset = "0.001"))
 condition_max <- as.numeric(Sys.getenv("SMIXCAN_CONDITION_MAX", unset = "100"))
 try_download_missing_reference <- tolower(Sys.getenv(
   "MD_BCAC_TRY_DOWNLOAD_MISSING_REF",

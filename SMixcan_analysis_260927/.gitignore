@@ -1,3 +1,8 @@
 work/
+.DS_Store
+results/current_run/
+data/1000Genome_Ref/*.bed
+data/1000Genome_Ref/*.fam
+data/1000Genome_Ref/*.log
 data/full_gwas/bcac_2020_sumstats_for_s-mixcan.txt.gz
 data/full_gwas/bcac_2020_subtype_zscores_for_s-mixcan.txt.gz
